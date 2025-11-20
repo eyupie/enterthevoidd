@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+            user-select: none;
+            cursor: none; /* Hide default cursor during gameplay */
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlay */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .score-container {
+            text-align: left;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+
+        .score-val {
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .speed-meter {
+            text-align: right;
+        }
+
+        .speed-val {
+            font-size: 24px;
+            color: #00ffff;
+        }
+
+        /* Menus */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 64px;
+            margin: 0;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, #ff0055, #00ffff, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+        }
+
+        p {
+            color: #ccc;
+            font-size: 18px;
+            margin-top: 10px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn {
+            margin-top: 40px;
+            padding: 20px 60px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 3px solid #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+        }
+
+        .key {
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #aaa;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer" class="ui-layer hidden">
+        <div class="hud-top">
+            <div class="score-container">
+                <div class="score-label">DISTANCE</div>
+                <div class="score-val" id="scoreDisplay">0</div>
+            </div>
+            <div class="speed-meter">
+                <div class="score-label">VELOCITY</div>
+                <div class="speed-val" id="speedDisplay">MACH 1</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="screen">
+        <h1>VOID</h1>
+        <p>Enter the void. Get lost.</p>
+        
+        <div class="controls-hint">
+            <span><span class="key">CURSOR / FINGER</span> STEER SHIP</span>
+        </div>
+
+        <button class="btn" onclick="startGame()">ENTER THE VOID</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="screen hidden">
+        <h1 style="font-size: 48px; color: #ff0055; -webkit-text-fill-color: #ff0055;">CATASTROPHIC DENSITY</h1>
+        <p>You reached <span id="finalScore" style="color:white; font-weight:bold;">0</span>m</p>
+        <button class="btn" onclick="resetGame()">RESTART</button>
+    </div>
+</div>
+
+<script>
+/**
+ * BENDING NEON VOID - Continuous Tunnel Runner
+ * - PERFORMANCE FIX: Removed all canvas fill/opaque drawing for maximum FPS.
+ * - SENSITIVITY FIX: Implemented cursor damping and reduced the effective control range.
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('game-container');
+
+// Config
+const SIDES = 6; // Hexagon cross-section
+const FOV = 800; // Field of view scale
+const SEGMENT_DEPTH = 30; // Close segments for continuous look
+const WALL_THICKNESS = 0.8; // Inner vs Outer radius multiplier (80% gap)
+const TUNNEL_RADIUS = 300; // Base tunnel radius
+const MAX_PATH_DEVIATION = 150; // Max distance the path center can drift
+const ANCHOR_SPACING = SEGMENT_DEPTH * 10; // 300: Distance between high-detail anchor points
+
+let WIDTH, HEIGHT;
+
+// Game State
+let gameState = 'START'; // START, PLAYING, GAMEOVER
+let score = 0;
+let speed = 0;
+const BASE_SPEED = 8; 
+let hue = 0; // Color cycle
+
+// Player State (Relative to screen center, 0,0 is center)
+let playerX = 0;
+let playerY = 0;
+let targetX = 0; // The actual cursor position (scaled)
+let targetY = 0; // The actual cursor position (scaled)
+
+// Control tuning
+const SENSITIVITY_SCALE = 0.5; // Reduce movement magnitude (50% less sensitive)
+const SMOOTHING_FACTOR = 0.15; // Controls inertia (0.15 is smooth)
+
+// Tunnel Structure
+// path = [{z: depth, centerX: x_offset, centerY: y_offset, rotation: r, isAnchor: bool}]
+let path = [];
+
+// Audio Context
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    const now = audioCtx.currentTime;
+
+    if (type === 'crash') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+}
+
+// --- INITIALIZATION & SETUP ---
+
+function resize() {
+    WIDTH = canvas.parentElement.clientWidth;
+    HEIGHT = canvas.parentElement.clientHeight;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    
+    // Clamp player position if resized while playing
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+}
+window.addEventListener('resize', resize);
+resize();
+
+
+function generateNextPathPoint() {
+    // Find the anchor farthest away
+    const latestAnchor = path.filter(p => p.isAnchor).sort((a, b) => b.z - a.z)[0] || 
+                         { z: -ANCHOR_SPACING, centerX: 0, centerY: 0, rotation: 0, isAnchor: true };
+                         
+    const nextZ = latestAnchor.z + ANCHOR_SPACING;
+
+    // Calculate new position based on the last anchor point, clamped to maximum deviation
+    const newX = latestAnchor.centerX + (Math.random() - 0.5) * 200;
+    const newY = latestAnchor.centerY + (Math.random() - 0.5) * 200;
+    
+    const clampedX = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newX));
+    const clampedY = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newY));
+
+    // Simple rotation drift
+    const newRotation = latestAnchor.rotation + (Math.random() - 0.5) * 0.5;
+
+    path.push({
+        z: nextZ,
+        centerX: clampedX,
+        centerY: clampedY,
+        rotation: newRotation,
+        isAnchor: true 
+    });
+
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initTunnel() {
+    path = [];
+    
+    // 1. Create initial anchor point P0 at Z=0
+    path.push({ z: 0, centerX: 0, centerY: 0, rotation: 0, isAnchor: true });
+    
+    // 2. Generate enough anchor points to fill the initial view (e.g., 5 anchors)
+    for(let i=0; i < 5; i++) {
+        generateNextPathPoint();
+    }
+
+    // 3. Interpolate segments to fill the gaps between anchors
+    let currentZ = 0;
+    const maxZ = path[path.length - 1].z;
+    
+    while(currentZ < maxZ) {
+        currentZ += SEGMENT_DEPTH;
+
+        // Find P1: Closest anchor behind or at currentZ
+        const p1 = path.filter(p => p.isAnchor && p.z <= currentZ)
+                       .sort((a, b) => b.z - a.z)[0]; 
+
+        // Find P2: Closest anchor ahead of currentZ
+        const p2 = path.filter(p => p.isAnchor && p.z > currentZ)
+                     .sort((a, b) => a.z - b.z)[0]; 
+
+        if (p1 && p2 && currentZ < p2.z) {
+            // t is the interpolation factor (0 to 1)
+            const t = ((currentZ - p1.z) / (p2.z - p1.z)); 
+            
+            const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+            const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+            const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+            
+            path.push({
+                z: currentZ,
+                centerX: x,
+                centerY: y,
+                rotation: r,
+                isAnchor: false
+            });
+        }
+    }
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initGame() {
+    initTunnel();
+    speed = BASE_SPEED;
+    score = 0;
+    playerX = 0;
+    playerY = 0;
+    targetX = 0;
+    targetY = 0;
+    hue = 0;
+    
+    gameState = 'PLAYING'; 
+}
+
+// --- INPUT HANDLERS (CURSOR CONTROL) ---
+
+// Mouse/Cursor Control (Sets the target position, which is then smoothed in update)
+gameContainer.addEventListener('mousemove', handleCursorMove);
+gameContainer.addEventListener('touchmove', handleCursorMove);
+
+function handleCursorMove(e) {
+    if (gameState !== 'PLAYING') return;
+    
+    e.preventDefault(); 
+    
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
+
+    const screenCenterOffsetX = clientX - WIDTH / 2;
+    const screenCenterOffsetY = clientY - HEIGHT / 2;
+
+    // Scale the target position to reduce overall sensitivity/twitchiness
+    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
+    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
+}
+
+// --- GAME LOOP & PHYSICS ---
+
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (gameState === 'START') {
+        render();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    const dt = (timestamp - lastTime) / 16.66; // Normalized deltaTime (1.0 at 60fps)
+    lastTime = timestamp;
+
+    if (gameState === 'PLAYING') {
+        update(dt);
+    }
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    // 0. Update Player Position (Smoothing/Damping)
+    
+    // Interpolate player position towards the scaled target position
+    // Multiply smoothing by dt to maintain consistent feel across different frame rates
+    playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt;
+    playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt;
+
+    // Clamp player position to screen bounds
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+
+
+    // 1. Update Game State
+    speed += 0.005 * dt; // Acceleration
+    score += Math.floor(speed * dt);
+    hue = (hue + 0.5 * dt) % 360; // Color cycle
+
+    // 2. Tunnel Movement
+    const moveZ = speed * dt;
+    
+    // Shift all tunnel segments towards camera
+    for (let i = 0; i < path.length; i++) {
+        path[i].z -= moveZ;
+    }
+
+    // 3. Generate/Cull Segments
+    
+    // Remove segments that passed the farthest culling plane (z < -ANCHOR_SPACING)
+    while (path.length > 0 && path[0].z < -ANCHOR_SPACING) {
+        path.shift();
+    }
+    
+    // Collision Check (on the closest segment still visible)
+    if (path.length > 0) {
+        // Find the first non-anchor segment after Z=0 for accurate collision check
+        let closestSegment = null;
+        for (const segment of path) {
+            if (!segment.isAnchor && segment.z > 0) {
+                closestSegment = segment;
+                break;
+            }
+        }
+        
+        if (closestSegment) {
+            checkCollision(closestSegment);
+        }
+    }
+
+    // Add new segments if needed 
+    const maxZNeeded = 5 * ANCHOR_SPACING; // Keep at least 5 anchors ahead
+    const farthestZ = path.length > 0 ? path[path.length - 1].z : 0;
+    
+    if (farthestZ < maxZNeeded) {
+        generateNextPathPoint();
+        
+        // After generating a new anchor, fill in the segments up to it.
+        const anchors = path.filter(p => p.isAnchor).sort((a, b) => a.z - b.z);
+        const p1 = anchors[anchors.length - 2];
+        const p2 = anchors[anchors.length - 1];
+        
+        if (p1 && p2) {
+            let currentInterpolationZ = p1.z;
+            while (currentInterpolationZ < p2.z - SEGMENT_DEPTH) {
+                currentInterpolationZ += SEGMENT_DEPTH;
+
+                const t = ((currentInterpolationZ - p1.z) / (p2.z - p1.z)); 
+                
+                const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+                const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+                const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+                
+                path.push({
+                    z: currentInterpolationZ,
+                    centerX: x,
+                    centerY: y,
+                    rotation: r,
+                    isAnchor: false
+                });
+            }
+            path.sort((a, b) => a.z - b.z);
+        }
+    }
+
+    // HUD Update
+    document.getElementById('scoreDisplay').innerText = Math.floor(score / 100);
+    let mach = (speed / BASE_SPEED).toFixed(1);
+    document.getElementById('speedDisplay').innerText = `MACH ${mach}`;
+}
+
+function checkCollision(segment) {
+    // Calculate the player's world position relative to the tunnel's center
+    const dx = playerX - segment.centerX;
+    const dy = playerY - segment.centerY;
+
+    // Calculate the distance from the player to the center of the segment
+    const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+
+    // Collision happens if player is outside the inner radius
+    const innerRadius = TUNNEL_RADIUS * WALL_THICKNESS;
+
+    if (distanceToCenter > innerRadius) {
+        crash();
+    }
+}
+
+function crash() {
+    gameState = 'GAMEOVER';
+    speed = 0;
+    playSound('crash');
+    
+    // Shake effect
+    canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+    setTimeout(() => canvas.style.transform = 'none', 50);
+    
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('finalScore').innerText = Math.floor(score / 100);
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    gameContainer.style.cursor = 'auto'; // Restore cursor on game over
+}
+
+// --- RENDERING ---
+
+function render() {
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    const cx = WIDTH / 2;
+    const cy = HEIGHT / 2;
+    
+    // Draw the continuous tunnel (Ribbons between segments)
+    const maxZ = path.reduce((max, p) => Math.max(max, p.z), 0);
+
+    // Iterate from farthest to closest (for correct overlap)
+    for (let i = path.length - 2; i >= 0; i--) {
+        const seg1 = path[i];
+        const seg2 = path[i + 1];
+        
+        // Only draw segments that passed the Z=1 plane
+        if (seg1.z < 1 || seg2.z < 1) continue; 
+
+        drawTunnelSegment(cx, cy, seg1, seg2, maxZ);
+    }
+    
+    // Draw Player Ship
+    ctx.save();
+    ctx.translate(cx + playerX, cy + playerY);
+    
+    // Ship visual appearance
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
+    ctx.fillStyle = '#fff';
+    
+    // Ship Shape (Triangle)
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(10, 10);
+    ctx.lineTo(-10, 10);
+    ctx.closePath();
+    ctx.fill();
+
+    
+    ctx.restore();
+}
+
+function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
+    const scale1 = FOV / seg1.z;
+    const scale2 = FOV / seg2.z;
+
+    const outerRadius1 = TUNNEL_RADIUS * scale1;
+    const innerRadius1 = outerRadius1 * WALL_THICKNESS;
+    
+    const outerRadius2 = TUNNEL_RADIUS * scale2;
+    const innerRadius2 = outerRadius2 * WALL_THICKNESS;
+
+    // Shading properties
+    const normalizedDepth = seg2.z / maxZ;
+    const lineBrightness = 60 + (1 - normalizedDepth) * 35; // 60% to 95% brightness
+    const lineWidth = 1 + scale2 * 0.5; 
+    const blurAmount = Math.max(0, 6 * scale2); 
+
+    for (let j = 0; j < SIDES; j++) {
+        // --- Calculate all 4 points for the inner wireframe connection ---
+        
+        const angle1_a = j * (Math.PI / 3) + seg1.rotation;
+        const angle1_b = (j + 1) * (Math.PI / 3) + seg1.rotation;
+        const angle2_a = j * (Math.PI / 3) + seg2.rotation;
+        // const angle2_b = (j + 1) * (Math.PI / 3) + seg2.rotation; // Not needed for pure wireframe
+
+        // Closest Segment (seg2) Points
+        const P3_I = { x: cx + seg2.centerX * scale2 + Math.cos(angle2_a) * innerRadius2, y: cy + seg2.centerY * scale2 + Math.sin(angle2_a) * innerRadius2 };
+        // const P4_I = { x: cx + seg2.centerX * scale2 + Math.cos(angle2_b) * innerRadius2, y: cy + seg2.centerY * scale2 + Math.sin(angle2_b) * innerRadius2 };
+        
+        // Farthest Segment (seg1) Points
+        const P1_I = { x: cx + seg1.centerX * scale1 + Math.cos(angle1_a) * innerRadius1, y: cy + seg1.centerY * scale1 + Math.sin(angle1_a) * innerRadius1 };
+        const P2_I = { x: cx + seg1.centerX * scale1 + Math.cos(angle1_b) * innerRadius1, y: cy + seg1.centerY * scale1 + Math.sin(angle1_b) * innerRadius1 };
+
+        // --- Draw the Inner Ring Wireframe (The Collision Boundary) ---
+        ctx.strokeStyle = `hsl(${hue + j * 10}, 100%, ${lineBrightness}%)`;
+        
+        // Set glow properties for all wireframes
+        ctx.shadowBlur = blurAmount; 
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.lineWidth = lineWidth; 
+
+        // 1. Draw Inner Ring Edges (Near Face of Seg2)
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P2_I.x, P2_I.y); // Use P2_I to connect to the next segment's inner point
+        ctx.stroke();
+        
+        // 2. Draw Side Wires (Connecting Seg1 to Seg2 on the inner edge)
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P1_I.x, P1_I.y);
+        ctx.stroke();
+    }
+    // Reset shadow globally after drawing all segments
+    ctx.shadowBlur = 0;
+}
+
+function startGame() {
+    initGame(); 
+    
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.remove('hidden');
+    gameContainer.style.cursor = 'none'; // Hide cursor for cleaner gameplay
+    
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    lastTime = performance.now();
+}
+
+function resetGame() {
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    startGame(); 
+}
+
+// Start the game loop on load
+window.onload = function () {
+    resize();
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,WIDTH, HEIGHT);
+    // Start loop running continuously (it renders the START screen until startGame is called)
+    requestAnimationFrame(gameLoop); 
+}
+</script>
+</body>
+</html>
