@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.thevo1d.twa", 
+      "sha256_cert_fingerprints": [
+        "E1:27:24:85:5D:C8:1E:DB:83:CE:B3:64:FA:B3:4A:83:CA:5E:87:9D:84:F0:D9:10:53:D7:5C:FD:AB:20:90:6D"
+      ]
+    }
+  }
+]
