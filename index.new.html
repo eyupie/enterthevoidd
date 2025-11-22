@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TJL2LTC5MD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TJL2LTC5MD');
+    </script>
+    <link rel="manifest" href="/manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+            user-select: none;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .hud-left {
+            display: flex;
+            gap: 40px; /* Space between current score and high score */
+        }
+
+        .score-container {
+            text-align: left;
+        }
+
+        .high-score-hud {
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+
+        .score-val {
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .score-val.small {
+            font-size: 28px;
+            color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
+        }
+
+        .speed-meter {
+            text-align: right;
+        }
+
+        .speed-val {
+            font-size: 24px;
+            color: #00ffff;
+        }
+
+        .pause-btn {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #fff;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+
+        .pause-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .pause-icon {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pause-icon span {
+            width: 3px;
+            height: 16px;
+            background: #fff;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 12px solid #fff;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            margin-left: 3px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            transition: opacity 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        #tutorialScreen {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #tutorialScreen .btn {
+            margin-top: 30px;
+            font-size: 20px;
+            padding: 15px 40px;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 64px;
+            margin: 0;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, #ff0055, #00ffff, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.8)); }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 36px;
+                letter-spacing: 2px;
+            }
+            
+            .game-over-title {
+                font-size: 18px !important;
+                letter-spacing: 0.5px !important;
+                line-height: 1.2;
+                text-align: center;
+                padding: 0 15px;
+                white-space: nowrap;
+            }
+            .hud-left {
+                gap: 15px;
+            }
+            .score-val {
+                font-size: 36px;
+            }
+            .score-val.small {
+                font-size: 20px;
+            }
+        }
+
+        p {
+            color: #ccc;
+            font-size: 18px;
+            margin-top: 10px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn {
+            margin-top: 40px;
+            padding: 20px 60px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 3px solid #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .key {
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #aaa;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn {
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #666;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-btn.active {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* --- STYLES FOR VIRTUAL JOYSTICK --- */
+        @media (max-width: 768px) {
+            #joystick-container {
+                pointer-events: auto;
+                width: 150px;
+                height: 150px;
+                position: absolute;
+                bottom: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.05);
+                border: 2px solid rgba(0, 255, 255, 0.2);
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 15;
+                opacity: 0.8;
+                touch-action: none; 
+            }
+
+            #joystick-handle {
+                width: 60px;
+                height: 60px;
+                background: rgba(0, 255, 255, 0.5);
+                border: 2px solid #00ffff;
+                border-radius: 50%;
+                box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+                transform: translate(0, 0);
+                position: absolute;
+                transition: all 0.05s ease-out;
+            }
+        }
+        /* Hide joystick on desktop */
+        @media (min-width: 769px) {
+            #joystick-container {
+                display: none;
+            }
+        }
+        /* --- END JOYSTICK STYLES --- */
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer" class="ui-layer hidden">
+        <div class="hud-top">
+            <div class="hud-left">
+                <!-- High Score Display in HUD -->
+                <div class="score-container high-score-hud">
+                    <div class="score-label">HIGH SCORE</div>
+                    <div class="score-val small" id="highScoreDisplayUI">0</div>
+                </div>
+
+                <!-- Current Score Display -->
+                <div class="score-container">
+                    <div class="score-label">DISTANCE</div>
+                    <div class="score-val" id="scoreDisplay">0</div>
+                </div>
+            </div>
+
+            <div class="speed-meter">
+                <div class="score-label">VELOCITY</div>
+                <div class="speed-val" id="speedDisplay">MACH 1</div>
+            </div>
+        </div>
+        <button class="pause-btn" id="pauseBtn" onclick="togglePause()">
+            <div class="pause-icon" id="pauseIcon">
+                <span></span>
+                <span></span>
+            </div>
+        </button>
+
+        <!-- VIRTUAL JOYSTICK CONTROL -->
+        <div id="joystick-container">
+            <div id="joystick-handle"></div>
+        </div>
+        <!-- END JOYSTICK -->
+    </div>
+
+    <div id="startScreen" class="screen">
+        <h1>VOID</h1>
+        <p>Enter the void. Get lost.</p>
+        
+        <!-- High Score on Start Screen -->
+        <div class="score-container" style="text-align: center; margin-bottom: 20px;">
+            <div class="score-label">ALL-TIME HIGH</div>
+            <div class="score-val" id="highScoreDisplayStart" style="font-size: 32px; color: #ff5500; text-shadow: 0 0 15px rgba(255, 85, 0, 0.7);">0</div>
+        </div>
+
+        <div class="theme-selector">
+            <button class="theme-btn active" onclick="setTheme('neon')">NEON</button>
+            <button class="theme-btn" onclick="setTheme('retro')">RETRO</button>
+            <button class="theme-btn" onclick="setTheme('pastel')">PASTEL</button>
+        </div>
+        
+        <div class="controls-hint">
+            <span><span class="key">TILT / CURSOR</span> STEER SHIP</span>
+        </div>
+
+        <button class="btn" onclick="startGame()">ENTER THE VOID</button>
+    </div>
+
+    <!-- NEW TUTORIAL SCREEN -->
+    <div id="tutorialScreen" class="screen hidden">
+        <h1 style="font-size: 36px; margin-bottom: 20px; -webkit-text-fill-color: #00ffff; color: #00ffff;">NAVIGATION PROTOCOL</h1>
+        <p style="font-size: 20px; color: #fff; line-height: 1.8;">
+            <span style="color: #00ffff; font-weight: 700;">OBJECTIVE:</span> Navigate the unstable tunnel to achieve maximum distance.
+            <br>
+            <span style="color: #00ffff; font-weight: 700;">CONTROL:</span> Move your cursor (or tilt your device) to steer your ship.
+            <br>
+            <span style="color: #ff0055; font-weight: 700;">WARNING:</span> Collision with the outer ring will result in catastrophic failure.
+        </p>
+        <button class="btn" onclick="hideTutorial()">COMMENCE</button>
+    </div>
+    <!-- END NEW TUTORIAL SCREEN -->
+
+    <div id="gameOverScreen" class="screen hidden">
+        <h1 class="game-over-title" style="font-size: 48px; color: #ff0055; -webkit-text-fill-color: #ff0055;">CATASTROPHIC DENSITY</h1>
+        <p id="finalScore">You reached <span style="color:white; font-weight:bold;">0</span>m</p>
+        <button class="btn" id="gameOverRestartBtn" onclick="quitToMenu()">RESTART</button>
+    </div>
+
+    <div id="pauseScreen" class="screen hidden">
+        <h1 style="font-size: 48px;">PAUSED</h1>
+        <button class="btn" onclick="togglePause()">RESUME</button>
+        <button class="btn" onclick="quitToMenu()" style="margin-top: 20px;">QUIT</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('game-container');
+
+const SIDES = 6;
+const FOV = 800;
+const SEGMENT_DEPTH = 20;
+const WALL_THICKNESS = 0.8;
+const TUNNEL_RADIUS = 300;
+const MAX_PATH_DEVIATION = 150;
+const ANCHOR_SPACING = SEGMENT_DEPTH * 10;
+
+let WIDTH, HEIGHT;
+
+let gameState = 'START';
+let score = 0;
+let speed = 0;
+const BASE_SPEED = 8; 
+let hue = 0;
+let highScore = 0; 
+
+let playerX = 0;
+let playerY = 0;
+let targetX = 0;
+let targetY = 0;
+
+let cameraOffsetX = 0;
+let cameraOffsetY = 0;
+
+/* ----- TUNED SENSITIVITY (reduced) ----- */
+const SENSITIVITY_SCALE = 0.18; // was 0.5 — lower makes mouse movement much less sensitive
+const SMOOTHING_FACTOR = 0.15;
+/* ---------------------------------------- */
+
+let isGyroActive = false;
+let gyroBaseX = 0;
+let gyroBaseY = 0;
+let GYRO_SENSITIVITY = 0.22; // reduced from 0.3
+
+// JOYSTICK VARIABLES
+let isJoystickActive = false;
+let joystickContainer = null;
+let joystickHandle = null;
+const JOYSTICK_MAX_TRAVEL = 45; 
+const JOYSTICK_MOVEMENT_SCALE = TUNNEL_RADIUS * 0.35; // reduced maximum travel mapping
+// END JOYSTICK VARIABLES
+
+// Color themes and aesthetics
+let currentTheme = 'neon';
+const COLOR_THEMES = {
+    neon: [0, 30, 60, 120, 180, 210, 240, 270, 300, 330],
+    retro: [0, 45, 90, 135, 180, 225, 270, 315],
+    pastel: [15, 75, 135, 195, 255, 315]
+};
+
+let currentColorIndex = 0;
+let currentTunnelShape = 6; // sides
+let nextShapeChange = 1000;
+
+let particles = [];
+const MAX_PARTICLES = 60;
+
+let path = [];
+let segmentColors = new Map();
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    const now = audioCtx.currentTime;
+
+    if (type === 'crash') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+}
+
+function loadHighScore() {
+    const storedScore = localStorage.getItem('void_high_score');
+    highScore = storedScore ? parseInt(storedScore, 10) : 0;
+    updateHighScoreDisplay();
+}
+
+function saveHighScore() {
+    localStorage.setItem('void_high_score', highScore);
+    updateHighScoreDisplay();
+}
+
+function updateHighScoreDisplay() {
+    document.getElementById('highScoreDisplayStart').innerText = highScore;
+    const uiDisplay = document.getElementById('highScoreDisplayUI');
+    if (uiDisplay) {
+        uiDisplay.innerText = highScore;
+    }
+}
+
+function resize() {
+    WIDTH = canvas.parentElement.clientWidth;
+    HEIGHT = canvas.parentElement.clientHeight;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+}
+window.addEventListener('resize', resize);
+resize();
+
+function createParticle() {
+    return {
+        x: Math.random() * WIDTH,
+        y: Math.random() * HEIGHT,
+        z: Math.random() * 1000 + 500,
+        speed: Math.random() * 2 + 1,
+        size: Math.random() * 2 + 1,
+        brightness: Math.random() * 0.5 + 0.5
+    };
+}
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+        particles.push(createParticle());
+    }
+}
+
+function updateParticles(dt) {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.z -= speed * dt * 2;
+        
+        if (p.z < 1) {
+            particles[i] = createParticle();
+        }
+    }
+}
+
+function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const scale = FOV / p.z;
+        const x = (p.x - WIDTH / 2) * scale + WIDTH / 2;
+        const y = (p.y - HEIGHT / 2) * scale + HEIGHT / 2;
+        const size = p.size * scale;
+        
+        if (x > 0 && x < WIDTH && y > 0 && y < HEIGHT) {
+            const alpha = p.brightness * (1 - p.z / 1500);
+            ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+function generateNextPathPoint() {
+    const latestAnchor = path.filter(p => p.isAnchor).sort((a, b) => b.z - a.z)[0] || 
+                         { z: -ANCHOR_SPACING, centerX: 0, centerY: 0, rotation: 0, isAnchor: true };
+                         
+    const nextZ = latestAnchor.z + ANCHOR_SPACING;
+
+    const newX = latestAnchor.centerX + (Math.random() - 0.5) * 200;
+    const newY = latestAnchor.centerY + (Math.random() - 0.5) * 200;
+    
+    const clampedX = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newX));
+    const clampedY = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newY));
+
+    const newRotation = latestAnchor.rotation + (Math.random() - 0.5) * 0.5;
+
+    const palette = COLOR_THEMES[currentTheme];
+    const segmentColor = palette[currentColorIndex];
+    currentColorIndex = (currentColorIndex + 1) % palette.length;
+    
+    segmentColors.set(nextZ, segmentColor);
+
+    path.push({
+        z: nextZ,
+        centerX: clampedX,
+        centerY: clampedY,
+        rotation: newRotation,
+        isAnchor: true 
+    });
+
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initTunnel() {
+    path = [];
+    segmentColors.clear();
+    
+    path.push({ z: 0, centerX: 0, centerY: 0, rotation: 0, isAnchor: true });
+    segmentColors.set(0, hue);
+    
+    for(let i=0; i < 5; i++) {
+        generateNextPathPoint();
+    }
+
+    let currentZ = 0;
+    const maxZ = path[path.length - 1].z;
+    
+    while(currentZ < maxZ) {
+        currentZ += SEGMENT_DEPTH;
+
+        const p1 = path.filter(p => p.isAnchor && p.z <= currentZ)
+                       .sort((a, b) => b.z - a.z)[0]; 
+
+        const p2 = path.filter(p => p.isAnchor && p.z > currentZ)
+                     .sort((a, b) => a.z - b.z)[0]; 
+
+        if (p1 && p2 && currentZ < p2.z) {
+            const t = ((currentZ - p1.z) / (p2.z - p1.z)); 
+            
+            const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+            const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+            const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+            
+            path.push({
+                z: currentZ,
+                centerX: x,
+                centerY: y,
+                rotation: r,
+                isAnchor: false
+            });
+        }
+    }
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initGame() {
+    loadHighScore(); 
+    initTunnel();
+    initParticles();
+    speed = BASE_SPEED;
+    score = 0;
+    playerX = 0;
+    playerY = 0;
+    targetX = 0;
+    targetY = 0;
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
+    currentColorIndex = 0;
+    currentTunnelShape = 6;
+    nextShapeChange = 1000;
+    
+    isJoystickActive = false; 
+    
+    if (localStorage.getItem('void_has_played')) {
+        gameState = 'PLAYING';
+    } else {
+        gameState = 'TUTORIAL';
+        document.getElementById('tutorialScreen').classList.remove('hidden');
+    }
+}
+
+function hideTutorial() {
+    localStorage.setItem('void_has_played', 'true');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    gameState = 'PLAYING';
+    lastTime = performance.now();
+}
+
+function setTheme(theme) {
+    currentTheme = theme;
+    currentColorIndex = 0;
+    
+    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+    try { event.target.classList.add('active'); } catch(e){}
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
+}
+
+function togglePause() {
+    const pauseIcon = document.getElementById('pauseIcon');
+    
+    if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        document.getElementById('pauseScreen').classList.remove('hidden');
+        pauseIcon.innerHTML = '<div class="play-icon"></div>';
+    } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        document.getElementById('pauseScreen').classList.add('hidden');
+        pauseIcon.innerHTML = '<span></span><span></span>';
+        lastTime = performance.now();
+    }
+}
+
+function quitToMenu() {
+    gameState = 'START';
+    document.getElementById('pauseScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    gameContainer.style.cursor = 'auto';
+    loadHighScore(); 
+}
+
+async function requestGyroPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === 'granted') {
+                enableGyroscope();
+            }
+        } catch (error) {
+            console.log('Gyroscope permission denied');
+        }
+    } else {
+        enableGyroscope();
+    }
+}
+
+function enableGyroscope() {
+    window.addEventListener('deviceorientation', handleGyroscope);
+    isGyroActive = true;
+}
+
+function handleGyroscope(e) {
+    if (gameState !== 'PLAYING' || !isGyroActive || isJoystickActive) return;
+    
+    const beta = e.beta || 0;
+    const gamma = e.gamma || 0;
+
+    if (gyroBaseX === 0 && gyroBaseY === 0) {
+        gyroBaseX = gamma;
+        gyroBaseY = beta;
+    }
+
+    const deltaX = (gamma - gyroBaseX) * GYRO_SENSITIVITY;
+    const deltaY = (beta - gyroBaseY) * GYRO_SENSITIVITY;
+
+    const maxTarget = TUNNEL_RADIUS;
+
+    // Reduced gyro multiplier to lower sensitivity
+    targetX = Math.max(-maxTarget, Math.min(maxTarget, deltaX * 4)); // was *8
+    targetY = Math.max(-maxTarget, Math.min(maxTarget, deltaY * 4)); // was *8
+}
+
+// --- JOYSTICK INPUT HANDLERS ---
+function onTouchStart(e) {
+    if (gameState !== 'PLAYING' || e.touches.length > 1) return;
+    e.preventDefault(); 
+    isJoystickActive = true;
+    onTouchMove(e);
+}
+
+function onTouchMove(e) {
+    if (!isJoystickActive || gameState !== 'PLAYING') return;
+    e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    const rect = joystickContainer.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let deltaX = touch.clientX - centerX;
+    let deltaY = touch.clientY - centerY;
+    
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    if (distance > JOYSTICK_MAX_TRAVEL) {
+        const angle = Math.atan2(deltaY, deltaX);
+        deltaX = Math.cos(angle) * JOYSTICK_MAX_TRAVEL;
+        deltaY = Math.sin(angle) * JOYSTICK_MAX_TRAVEL;
+    }
+
+    joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    
+    const normalizedX = deltaX / JOYSTICK_MAX_TRAVEL;
+    const normalizedY = deltaY / JOYSTICK_MAX_TRAVEL;
+
+    // extra damping factor to reduce sensitivity (makes movement smaller)
+    const DAMPING = 0.35;
+
+    targetX = normalizedX * JOYSTICK_MOVEMENT_SCALE * DAMPING;
+    targetY = normalizedY * JOYSTICK_MOVEMENT_SCALE * DAMPING;
+}
+
+function onTouchEnd() {
+    if (!isJoystickActive) return;
+    isJoystickActive = false;
+    
+    joystickHandle.style.transform = 'translate(0, 0)';
+    
+    targetX = 0; 
+    targetY = 0;
+}
+
+function setupJoystick() {
+    joystickContainer = document.getElementById('joystick-container');
+    joystickHandle = document.getElementById('joystick-handle');
+
+    if (joystickContainer) {
+        joystickContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+        joystickContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+        joystickContainer.addEventListener('touchend', onTouchEnd, { passive: true });
+        joystickContainer.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    }
+}
+// --- END JOYSTICK INPUT HANDLERS ---
+
+
+// Handle mouse movement (Desktop controls)
+gameContainer.addEventListener('mousemove', handleCursorMove);
+
+// Keyboard controls
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'p' || e.key === 'P') {
+        if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+            togglePause();
+        }
+    }
+});
+
+function handleCursorMove(e) {
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
+    
+    if (e.touches) return; 
+
+    if (isGyroActive && gyroBaseX !== 0) return;
+    
+    if (e.cancelable) e.preventDefault();
+    
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    const screenCenterOffsetX = clientX - WIDTH / 2;
+    const screenCenterOffsetY = clientY - HEIGHT / 2;
+
+    // reduced sensitivity already via SENSITIVITY_SCALE
+    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
+    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
+}
+
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (gameState === 'START' || gameState === 'PAUSED' || gameState === 'TUTORIAL') {
+        render(); // Always render for visual feedback
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    const dt = (timestamp - lastTime) / 16.66;
+    lastTime = timestamp;
+
+    if (gameState === 'PLAYING') {
+        update(dt);
+    }
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt;
+    playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt;
+
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+
+    const cameraMultiplier = isGyroActive ? -0.4 : -0.25;
+    const targetCameraX = playerX * cameraMultiplier;
+    const targetCameraY = playerY * cameraMultiplier;
+    cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
+    cameraOffsetY += (targetCameraY - cameraOffsetY) * 0.08 * dt;
+
+    speed += 0.005 * dt;
+    score += Math.floor(speed * dt);
+
+    updateParticles(dt);
+
+    const moveZ = speed * dt;
+    
+    for (let i = 0; i < path.length; i++) {
+        path[i].z -= moveZ;
+    }
+
+    // Tunnel shape variation
+    if (score / 100 > nextShapeChange) {
+        const shapes = [4, 6, 8];
+        currentTunnelShape = shapes[Math.floor(Math.random() * shapes.length)];
+        nextShapeChange += 500;
+    }
+
+    while (path.length > 0 && path[0].z < -ANCHOR_SPACING) {
+        const removedZ = path[0].z;
+        path.shift();
+        segmentColors.delete(removedZ);
+    }
+    
+    if (path.length > 0) {
+        let closestSegment = null;
+        for (const segment of path) {
+            if (!segment.isAnchor && segment.z > 0) {
+                closestSegment = segment;
+                break;
+            }
+        }
+        
+        if (closestSegment) {
+            checkCollision(closestSegment);
+        }
+    }
+
+    const maxZNeeded = 5 * ANCHOR_SPACING;
+    const farthestZ = path.length > 0 ? path[path.length - 1].z : 0;
+    
+    if (farthestZ < maxZNeeded) {
+        generateNextPathPoint();
+        
+        const anchors = path.filter(p => p.isAnchor).sort((a, b) => a.z - b.z);
+        const p1 = anchors[anchors.length - 2];
+        const p2 = anchors[anchors.length - 1];
+        
+        if (p1 && p2) {
+            let currentInterpolationZ = p1.z;
+            while (currentInterpolationZ < p2.z - SEGMENT_DEPTH) {
+                currentInterpolationZ += SEGMENT_DEPTH;
+
+                const t = ((currentInterpolationZ - p1.z) / (p2.z - p1.z)); 
+                
+                const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+                const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+                const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+                
+                path.push({
+                    z: currentInterpolationZ,
+                    centerX: x,
+                    centerY: y,
+                    rotation: r,
+                    isAnchor: false
+                });
+            }
+            path.sort((a, b) => a.z - b.z);
+        }
+    }
+
+    document.getElementById('scoreDisplay').innerText = Math.floor(score / 100);
+    let mach = (speed / BASE_SPEED).toFixed(1);
+    document.getElementById('speedDisplay').innerText = `MACH ${mach}`;
+}
+
+function checkCollision(segment) {
+    const dx = playerX - segment.centerX;
+    const dy = playerY - segment.centerY;
+
+    const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+
+    const innerRadius = TUNNEL_RADIUS * WALL_THICKNESS;
+
+    if (distanceToCenter > innerRadius) {
+        crash();
+    }
+}
+
+function crash() {
+    gameState = 'GAMEOVER';
+    speed = 0;
+    playSound('crash');
+    
+    if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+    }
+    
+    canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+    setTimeout(() => canvas.style.transform = 'none', 50);
+    
+    const finalScoreValue = Math.floor(score / 100);
+
+    if (finalScoreValue > highScore) {
+        highScore = finalScoreValue;
+        saveHighScore();
+        document.getElementById('finalScore').innerHTML = `NEW RECORD: <span style="color: #00ffff; font-weight:bold;">${finalScoreValue}</span>m`;
+    } else {
+        document.getElementById('finalScore').innerHTML = `You reached <span style="color:white; font-weight:bold;">${finalScoreValue}</span>m`;
+    }
+
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    gameContainer.style.cursor = 'auto';
+}
+
+function render() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.save();
+    ctx.translate(cameraOffsetX, cameraOffsetY);
+
+    drawParticles();
+
+    const cx = WIDTH / 2;
+    const cy = HEIGHT / 2;
+    
+    const pathLen = path.length;
+    
+    for (let i = pathLen - 2; i >= 0; i--) {
+        const seg1 = path[i];
+        const seg2 = path[i + 1];
+        
+        if (seg1.z < 1 || seg2.z < 1) continue; 
+
+        drawTunnelSegment(cx, cy, seg1, seg2);
+    }
+    
+    // Draw ship - simple triangle
+    ctx.save();
+    ctx.translate(cx + playerX, cy + playerY);
+    
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
+    ctx.fillStyle = '#fff';
+    
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(10, 10);
+    ctx.lineTo(-10, 10);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Second glow layer
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = `hsla(${hue + 180}, 100%, 60%, 0.5)`;
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    
+    ctx.restore();
+}
+
+function drawTunnelSegment(cx, cy, seg1, seg2) {
+    const scale1 = FOV / seg1.z;
+    const scale2 = FOV / seg2.z;
+
+    const outerRadius1 = TUNNEL_RADIUS * scale1;
+    const innerRadius1 = outerRadius1 * WALL_THICKNESS;
+    
+    const outerRadius2 = TUNNEL_RADIUS * scale2;
+    const innerRadius2 = outerRadius2 * WALL_THICKNESS;
+
+    let segmentHue = hue;
+    const anchors = Array.from(segmentColors.keys()).sort((a, b) => a - b);
+    
+    for (let i = anchors.length - 1; i >= 0; i--) {
+        if (seg2.z >= anchors[i]) {
+            segmentHue = segmentColors.get(anchors[i]);
+            break;
+        }
+    }
+    
+    // --- Thematic Styling Logic ---
+    let lineWidth, blurAmount, colorSaturation, colorLightness;
+
+    if (currentTheme === 'neon') {
+        lineWidth = 2 + scale2 * 1.0;
+        blurAmount = Math.max(0, 15 * scale2);
+        colorSaturation = '100%';
+        colorLightness = '70%';
+        ctx.globalAlpha = 1.0;
+    } else if (currentTheme === 'retro') {
+        lineWidth = 4 + scale2 * 0.5; 
+        blurAmount = 0; // Retro is now defined as no glow
+        colorSaturation = '80%';
+        colorLightness = '60%';
+        ctx.globalAlpha = 0.9;
+    } else if (currentTheme === 'pastel') {
+        lineWidth = 1 + scale2 * 0.5;
+        blurAmount = Math.max(0, 5 * scale2);
+        colorSaturation = '80%';
+        colorLightness = '85%'; 
+        ctx.globalAlpha = 0.9;
+    }
+
+    ctx.strokeStyle = `hsl(${segmentHue}, ${colorSaturation}, ${colorLightness})`;
+    ctx.shadowBlur = blurAmount;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.lineWidth = lineWidth;
+    // --- End Thematic Styling Logic ---
+
+    const sides = currentTunnelShape;
+    const angleStep = (Math.PI * 2) / sides;
+    
+    for (let j = 0; j < sides; j++) {
+        const angle1_a = j * angleStep + seg1.rotation;
+        const angle1_b = (j + 1) * angleStep + seg1.rotation;
+        const angle2_a = j * angleStep + seg2.rotation;
+
+        const cos2a = Math.cos(angle2_a);
+        const sin2a = Math.sin(angle2_a);
+        const cos1a = Math.cos(angle1_a);
+        const sin1a = Math.sin(angle1_a);
+        const cos1b = Math.cos(angle1_b);
+        const sin1b = Math.sin(angle1_b);
+
+        const centerX2Scaled = seg2.centerX * scale2;
+        const centerY2Scaled = seg2.centerY * scale2;
+        const centerX1Scaled = seg1.centerX * scale1;
+        const centerY1Scaled = seg1.centerY * scale1;
+
+        const P3_I = { 
+            x: cx + centerX2Scaled + cos2a * innerRadius2, 
+            y: cy + centerY2Scaled + sin2a * innerRadius2 
+        };
+        
+        const P1_I = { 
+            x: cx + centerX1Scaled + cos1a * innerRadius1, 
+            y: cy + centerY1Scaled + sin1a * innerRadius1 
+        };
+        
+        const P2_I = { 
+            x: cx + centerX1Scaled + cos1b * innerRadius1, 
+            y: cy + centerY1Scaled + sin1b * innerRadius1 
+        };
+
+        // Draw the inner wall segment lines (Quads are drawn as two triangles)
+        // Draw segment P3_I to P2_I 
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P2_I.x, P2_I.y);
+        ctx.stroke();
+        
+        // Draw segment P3_I to P1_I
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P1_I.x, P1_I.y);
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0; // Reset global alpha
+}
+
+function startGame() {
+    initGame(); 
+    
+    requestGyroPermission();
+    
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.remove('hidden');
+    gameContainer.style.cursor = 'none';
+    
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    if (gameState === 'PLAYING') {
+        lastTime = performance.now();
+    }
+}
+
+window.onload = function () {
+    resize();
+    setupJoystick(); 
+    loadHighScore(); 
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,WIDTH, HEIGHT);
+    requestAnimationFrame(gameLoop); 
+}
+</script>
+</body>
+</html>
