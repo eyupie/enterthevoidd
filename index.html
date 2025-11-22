@@ -36,24 +36,7 @@
             background: #000;
             overflow: hidden;
             user-select: none;
-            /* İMLEÇ YÖNETİMİ: Oyun alanında imleci varsayılan (görünür) yapıyoruz, 
-               ancak fareyle kontrol ediyorsak gemi (ship) imlecin yerini alacak. 
-               Mobil cihazlarda 'none' kalmaya devam edecek. */
-            cursor: default; 
-        }
-        
-        /* İmleci SADECE mobil joystick görünmüyorsa gizle (masaüstünde oyun oynarken gemi imleç olacak) */
-        @media (min-width: 769px) {
-             #game-container.playing {
-                cursor: none; /* Masaüstünde oyun oynarken imleci gizle */
-            }
-        }
-        
-        /* Mobile'da joystick varken imleci gizle */
-        @media (max-width: 768px) {
-             #game-container.playing {
-                cursor: none; 
-            }
+            cursor: none;
         }
 
         canvas {
@@ -429,8 +412,7 @@
         </div>
         
         <div class="controls-hint">
-            <!-- Kontrol ipucunu güncelledik -->
-            <span><span class="key">TILT / MOUSE</span> STEER SHIP</span>
+            <span><span class="key">TILT / CURSOR</span> STEER SHIP</span>
         </div>
 
         <button class="btn" onclick="startGame()">ENTER THE VOID</button>
@@ -493,10 +475,9 @@ let targetY = 0;
 let cameraOffsetX = 0;
 let cameraOffsetY = 0;
 
-// Cursor ve Gyro hassasiyeti (SENSITIVITY_SCALE artık kullanılmayacak ama kalsın)
+// Cursor ve Gyro hassasiyeti (değişmedi)
 const SENSITIVITY_SCALE = 0.5;
-// SMOOTHING_FACTOR'ı 0'a düşürdük, böylece gemi doğrudan imleci takip edecek.
-const SMOOTHING_FACTOR = 0.0; // İSTEK: Direk cursora bağlamak için yumuşatmayı kaldırdık (0.0).
+const SMOOTHING_FACTOR = 0.15;
 
 let isGyroActive = false;
 let gyroBaseX = 0;
@@ -510,8 +491,10 @@ let joystickHandle = null;
 const JOYSTICK_MAX_TRAVEL = 45; 
 const JOYSTICK_MOVEMENT_SCALE = TUNNEL_RADIUS; 
 
-// Joystick hassasiyetini %40'a düşürdük
-const JOYSTICK_SENSITIVITY_FACTOR = 0.40; 
+// İSTEK: Joystick hassasiyetini %40'a düşür
+// Mevcut Joystick Movement Scale (Hassasiyet) TUNNEL_RADIUS (300) idi.
+// %40'ı: 300 * 0.40 = 120
+const JOYSTICK_SENSITIVITY_FACTOR = 0.40; // %40 olarak ayarlandı
 const JOYSTICK_ADJUSTED_SCALE = JOYSTICK_MOVEMENT_SCALE * JOYSTICK_SENSITIVITY_FACTOR; 
 // END JOYSTICK VARIABLES
 
@@ -575,6 +558,12 @@ function saveHighScore() {
 
 function updateHighScoreDisplay() {
     document.getElementById('highScoreDisplayStart').innerText = highScore;
+    
+    // UI'daki yüksek skoru güncellemeyi kaldırdık, sadece başlangıç ekranını güncelleyeceğiz.
+    // const uiDisplay = document.getElementById('highScoreDisplayUI');
+    // if (uiDisplay) {
+    //     uiDisplay.innerText = highScore;
+    // }
 }
 // ----------------------------
 
@@ -584,7 +573,6 @@ function resize() {
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     
-    // Gemi pozisyonunu sınırlama. Artık targetX/Y'yi kullanmıyoruz.
     playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
     playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
 }
@@ -765,13 +753,11 @@ function togglePause() {
         gameState = 'PAUSED';
         document.getElementById('pauseScreen').classList.remove('hidden');
         pauseIcon.innerHTML = '<div class="play-icon"></div>';
-        gameContainer.classList.remove('playing'); // İmleci geri getir
     } else if (gameState === 'PAUSED') {
         gameState = 'PLAYING';
         document.getElementById('pauseScreen').classList.add('hidden');
         pauseIcon.innerHTML = '<span></span><span></span>';
         lastTime = performance.now();
-        gameContainer.classList.add('playing'); // İmleci gizle
     }
 }
 
@@ -782,9 +768,8 @@ function quitToMenu() {
     document.getElementById('ui-layer').classList.add('hidden');
     document.getElementById('startScreen').classList.remove('hidden');
     document.getElementById('tutorialScreen').classList.add('hidden');
-    
-    // START ekranında imleci varsayılan yap
-    gameContainer.classList.remove('playing');
+    gameContainer.style.cursor = 'auto';
+    loadHighScore(); 
 }
 
 async function requestGyroPermission() {
@@ -825,10 +810,6 @@ function handleGyroscope(e) {
 
     targetX = Math.max(-maxTarget, Math.min(maxTarget, deltaX * 8));
     targetY = Math.max(-maxTarget, Math.min(maxTarget, deltaY * 8));
-    
-    // Jiroskop aktifken playerX/Y'yi de güncelleyelim.
-    playerX = targetX;
-    playerY = targetY;
 }
 
 // --- JOYSTICK INPUT HANDLERS ---
@@ -864,12 +845,9 @@ function onTouchMove(e) {
     const normalizedX = deltaX / JOYSTICK_MAX_TRAVEL;
     const normalizedY = deltaY / JOYSTICK_MAX_TRAVEL;
 
-    targetX = normalizedX * JOYSTICK_ADJUSTED_SCALE; 
-    targetY = normalizedY * JOYSTICK_ADJUSTED_SCALE;
-    
-    // Joystick aktifken playerX/Y'yi de güncelleyelim.
-    playerX = targetX;
-    playerY = targetY;
+    // TARGET HESAPLAMASI İÇİN YENİ AYARLANMIŞ SKALAYI KULLAN
+    targetX = normalizedX * JOYSTICK_ADJUSTED_SCALE; // Hassasiyet %40'a düşürüldü
+    targetY = normalizedY * JOYSTICK_ADJUSTED_SCALE; // Hassasiyet %40'a düşürüldü
 }
 
 function onTouchEnd() {
@@ -880,9 +858,6 @@ function onTouchEnd() {
     
     targetX = 0; 
     targetY = 0;
-    
-    playerX = 0; // Joystick bırakılınca gemiyi merkeze getir
-    playerY = 0;
 }
 
 function setupJoystick() {
@@ -914,26 +889,20 @@ window.addEventListener('keydown', (e) => {
 function handleCursorMove(e) {
     if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
     
-    // Mobil kontrol aktifse fareyi görmezden gel
-    if (e.touches || isGyroActive || isJoystickActive) return; 
+    if (e.touches) return; 
 
+    if (isGyroActive && gyroBaseX !== 0) return;
+    
     if (e.cancelable) e.preventDefault();
     
     const clientX = e.clientX;
     const clientY = e.clientY;
-    
-    // 1. İmleç Konumunu Ekranın Merkezine Göre Hesapla (X/Y)
+
     const screenCenterOffsetX = clientX - WIDTH / 2;
     const screenCenterOffsetY = clientY - HEIGHT / 2;
-    
-    // 2. Bu konumu doğrudan geminin pozisyonu olarak ayarla (playerX/Y).
-    // İmlecin ekran sınırları içinde kalmasını sağlamak için MAX/MIN kullanıyoruz.
-    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, screenCenterOffsetX));
-    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, screenCenterOffsetY));
-    
-    // targetX/Y'yi de aynı değere set ediyoruz, böylece yumuşatma (smoothing) yapmayacak
-    targetX = playerX;
-    targetY = playerY;
+
+    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
+    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
 }
 
 let lastTime = 0;
@@ -957,20 +926,13 @@ function gameLoop(timestamp) {
 }
 
 function update(dt) {
-    // İSTEK: SMOOTHING_FACTOR 0 olduğu için bu satır playerX/Y'yi targetX/Y'ye direkt atar
-    // Eğer mouse ile kontrol ediliyorsa, playerX = targetX'i handleCursorMove zaten ayarladı.
-    // Eğer mobil kontrol varsa (gyro/joystick), playerX/Y handleGyroscope/onTouchMove içinde ayarlandı.
-    // playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt; // Smoothing'i kaldırdık
-    // playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt; // Smoothing'i kaldırdık
+    playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt;
+    playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt;
 
-    // Gemi zaten cursor'a bağlı olduğu için, geminin ekran dışına çıkması engellendi.
-    // Mobil kontroller de zaten max menzil içinde kalıyor.
-    // playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
-    // playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
 
-    const cameraMultiplier = isGyroActive || isJoystickActive ? -0.4 : -0.25;
-    
-    // Kamera ofsetini yavaşça gemi pozisyonuna göre ayarla
+    const cameraMultiplier = isGyroActive ? -0.4 : -0.25;
     const targetCameraX = playerX * cameraMultiplier;
     const targetCameraY = playerY * cameraMultiplier;
     cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
@@ -1089,9 +1051,7 @@ function crash() {
 
     document.getElementById('ui-layer').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.remove('hidden');
-    
-    // OYUN BİTTİĞİNDE imleci varsayılan yap
-    gameContainer.classList.remove('playing');
+    gameContainer.style.cursor = 'auto';
 }
 
 function render() {
@@ -1252,10 +1212,7 @@ function startGame() {
     
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('ui-layer').classList.remove('hidden');
-    
-    // OYUN BAŞLADIĞINDA imleci gizle (gemi onun yerini alacak)
-    // gameContainer.style.cursor = 'none'; yerini playing class'ı aldı
-    gameContainer.classList.add('playing');
+    gameContainer.style.cursor = 'none';
     
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
