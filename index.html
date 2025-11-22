@@ -66,8 +66,18 @@
             width: 100%;
         }
 
+        .hud-left {
+            display: flex;
+            gap: 40px; /* Space between current score and high score */
+        }
+
         .score-container {
             text-align: left;
+        }
+
+        .high-score-hud {
+            text-align: left;
+            opacity: 0.8;
         }
 
         .score-label {
@@ -80,6 +90,12 @@
             font-size: 48px;
             font-weight: 900;
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .score-val.small {
+            font-size: 28px;
+            color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
         }
 
         .speed-meter {
@@ -156,6 +172,21 @@
             padding: 20px;
             box-sizing: border-box;
         }
+        
+        #tutorialScreen {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #tutorialScreen .btn {
+            margin-top: 30px;
+            font-size: 20px;
+            padding: 15px 40px;
+        }
 
         .hidden {
             opacity: 0;
@@ -192,6 +223,15 @@
                 text-align: center;
                 padding: 0 15px;
                 white-space: nowrap;
+            }
+            .hud-left {
+                gap: 15px;
+            }
+            .score-val {
+                font-size: 36px;
+            }
+            .score-val.small {
+                font-size: 20px;
             }
         }
 
@@ -249,6 +289,7 @@
             display: flex;
             gap: 15px;
             margin-top: 20px;
+            margin-bottom: 20px;
         }
 
         .theme-btn {
@@ -267,6 +308,47 @@
             color: #fff;
             background: rgba(255,255,255,0.2);
         }
+        
+        /* --- STYLES FOR VIRTUAL JOYSTICK --- */
+        @media (max-width: 768px) {
+            #joystick-container {
+                pointer-events: auto;
+                width: 150px;
+                height: 150px;
+                position: absolute;
+                bottom: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.05);
+                border: 2px solid rgba(0, 255, 255, 0.2);
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 15;
+                opacity: 0.8;
+                touch-action: none; 
+            }
+
+            #joystick-handle {
+                width: 60px;
+                height: 60px;
+                background: rgba(0, 255, 255, 0.5);
+                border: 2px solid #00ffff;
+                border-radius: 50%;
+                box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+                transform: translate(0, 0);
+                position: absolute;
+                transition: all 0.05s ease-out;
+            }
+        }
+        /* Hide joystick on desktop */
+        @media (min-width: 769px) {
+            #joystick-container {
+                display: none;
+            }
+        }
+        /* --- END JOYSTICK STYLES --- */
 
     </style>
 </head>
@@ -277,10 +359,20 @@
 
     <div id="ui-layer" class="ui-layer hidden">
         <div class="hud-top">
-            <div class="score-container">
-                <div class="score-label">DISTANCE</div>
-                <div class="score-val" id="scoreDisplay">0</div>
+            <div class="hud-left">
+                <!-- High Score Display in HUD -->
+                <div class="score-container high-score-hud">
+                    <div class="score-label">HIGH SCORE</div>
+                    <div class="score-val small" id="highScoreDisplayUI">0</div>
+                </div>
+
+                <!-- Current Score Display -->
+                <div class="score-container">
+                    <div class="score-label">DISTANCE</div>
+                    <div class="score-val" id="scoreDisplay">0</div>
+                </div>
             </div>
+
             <div class="speed-meter">
                 <div class="score-label">VELOCITY</div>
                 <div class="speed-val" id="speedDisplay">MACH 1</div>
@@ -292,12 +384,24 @@
                 <span></span>
             </div>
         </button>
+
+        <!-- VIRTUAL JOYSTICK CONTROL -->
+        <div id="joystick-container">
+            <div id="joystick-handle"></div>
+        </div>
+        <!-- END JOYSTICK -->
     </div>
 
     <div id="startScreen" class="screen">
         <h1>VOID</h1>
         <p>Enter the void. Get lost.</p>
         
+        <!-- High Score on Start Screen -->
+        <div class="score-container" style="text-align: center; margin-bottom: 20px;">
+            <div class="score-label">ALL-TIME HIGH</div>
+            <div class="score-val" id="highScoreDisplayStart" style="font-size: 32px; color: #ff5500; text-shadow: 0 0 15px rgba(255, 85, 0, 0.7);">0</div>
+        </div>
+
         <div class="theme-selector">
             <button class="theme-btn active" onclick="setTheme('neon')">NEON</button>
             <button class="theme-btn" onclick="setTheme('retro')">RETRO</button>
@@ -311,10 +415,24 @@
         <button class="btn" onclick="startGame()">ENTER THE VOID</button>
     </div>
 
+    <!-- NEW TUTORIAL SCREEN -->
+    <div id="tutorialScreen" class="screen hidden">
+        <h1 style="font-size: 36px; margin-bottom: 20px; -webkit-text-fill-color: #00ffff; color: #00ffff;">NAVIGATION PROTOCOL</h1>
+        <p style="font-size: 20px; color: #fff; line-height: 1.8;">
+            <span style="color: #00ffff; font-weight: 700;">OBJECTIVE:</span> Navigate the unstable tunnel to achieve maximum distance.
+            <br>
+            <span style="color: #00ffff; font-weight: 700;">CONTROL:</span> Move your cursor (or tilt your device) to steer your ship.
+            <br>
+            <span style="color: #ff0055; font-weight: 700;">WARNING:</span> Collision with the outer ring will result in catastrophic failure.
+        </p>
+        <button class="btn" onclick="hideTutorial()">COMMENCE</button>
+    </div>
+    <!-- END NEW TUTORIAL SCREEN -->
+
     <div id="gameOverScreen" class="screen hidden">
         <h1 class="game-over-title" style="font-size: 48px; color: #ff0055; -webkit-text-fill-color: #ff0055;">CATASTROPHIC DENSITY</h1>
-        <p>You reached <span id="finalScore" style="color:white; font-weight:bold;">0</span>m</p>
-        <button class="btn" onclick="resetGame()">RESTART</button>
+        <p id="finalScore">You reached <span style="color:white; font-weight:bold;">0</span>m</p>
+        <button class="btn" id="gameOverRestartBtn" onclick="quitToMenu()">RESTART</button>
     </div>
 
     <div id="pauseScreen" class="screen hidden">
@@ -344,6 +462,7 @@ let score = 0;
 let speed = 0;
 const BASE_SPEED = 8; 
 let hue = 0;
+let highScore = 0; 
 
 let playerX = 0;
 let playerY = 0;
@@ -361,11 +480,22 @@ let gyroBaseX = 0;
 let gyroBaseY = 0;
 const GYRO_SENSITIVITY = 0.3;
 
-// Color themes
+// JOYSTICK VARIABLES
+let isJoystickActive = false;
+let joystickContainer = null;
+let joystickHandle = null;
+const JOYSTICK_MAX_TRAVEL = 45; 
+const JOYSTICK_MOVEMENT_SCALE = TUNNEL_RADIUS; 
+// END JOYSTICK VARIABLES
+
+// Color themes and aesthetics
 let currentTheme = 'neon';
 const COLOR_THEMES = {
+    // Neon theme: bright, contrasting hues, high glow
     neon: [0, 30, 60, 120, 180, 210, 240, 270, 300, 330],
+    // Retro theme: saturated, 80s inspired, no glow
     retro: [0, 45, 90, 135, 180, 225, 270, 315],
+    // Pastel theme: light, soft tones, slight glow
     pastel: [15, 75, 135, 195, 255, 315]
 };
 
@@ -374,10 +504,6 @@ let currentColorIndex = 0;
 // Tunnel variations
 let currentTunnelShape = 6; // sides
 let nextShapeChange = 1000;
-
-// Trail system
-let trail = [];
-const MAX_TRAIL_LENGTH = 15;
 
 let particles = [];
 const MAX_PARTICLES = 60;
@@ -407,6 +533,28 @@ function playSound(type) {
         osc.stop(now + 0.5);
     }
 }
+
+// --- High Score and Tutorial Functions ---
+function loadHighScore() {
+    const storedScore = localStorage.getItem('void_high_score');
+    highScore = storedScore ? parseInt(storedScore, 10) : 0;
+    updateHighScoreDisplay();
+}
+
+function saveHighScore() {
+    localStorage.setItem('void_high_score', highScore);
+    updateHighScoreDisplay();
+}
+
+function updateHighScoreDisplay() {
+    document.getElementById('highScoreDisplayStart').innerText = highScore;
+    // Check if the UI element exists before trying to update it (it might be hidden)
+    const uiDisplay = document.getElementById('highScoreDisplayUI');
+    if (uiDisplay) {
+        uiDisplay.innerText = highScore;
+    }
+}
+// ----------------------------
 
 function resize() {
     WIDTH = canvas.parentElement.clientWidth;
@@ -540,11 +688,8 @@ function initTunnel() {
     path.sort((a, b) => a.z - b.z);
 }
 
-function spawnBoost() {
-    // Removed boost system
-}
-
 function initGame() {
+    loadHighScore(); 
     initTunnel();
     initParticles();
     speed = BASE_SPEED;
@@ -553,13 +698,29 @@ function initGame() {
     playerY = 0;
     targetX = 0;
     targetY = 0;
-    hue = 0;
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
     currentColorIndex = 0;
     currentTunnelShape = 6;
     nextShapeChange = 1000;
-    trail = [];
     
-    gameState = 'PLAYING'; 
+    isJoystickActive = false; 
+    
+    // Check if tutorial should be shown
+    if (localStorage.getItem('void_has_played')) {
+        gameState = 'PLAYING';
+    } else {
+        gameState = 'TUTORIAL';
+        document.getElementById('tutorialScreen').classList.remove('hidden');
+    }
+}
+
+function hideTutorial() {
+    localStorage.setItem('void_has_played', 'true');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    gameState = 'PLAYING';
+    lastTime = performance.now(); // Reset timer to prevent jump
 }
 
 function setTheme(theme) {
@@ -568,6 +729,9 @@ function setTheme(theme) {
     
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
 }
 
 function togglePause() {
@@ -589,9 +753,12 @@ function togglePause() {
 function quitToMenu() {
     gameState = 'START';
     document.getElementById('pauseScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
     document.getElementById('ui-layer').classList.add('hidden');
     document.getElementById('startScreen').classList.remove('hidden');
+    document.getElementById('tutorialScreen').classList.add('hidden');
     gameContainer.style.cursor = 'auto';
+    loadHighScore(); 
 }
 
 async function requestGyroPermission() {
@@ -615,7 +782,7 @@ function enableGyroscope() {
 }
 
 function handleGyroscope(e) {
-    if (gameState !== 'PLAYING' || !isGyroActive) return;
+    if (gameState !== 'PLAYING' || !isGyroActive || isJoystickActive) return;
     
     const beta = e.beta || 0;
     const gamma = e.gamma || 0;
@@ -628,12 +795,75 @@ function handleGyroscope(e) {
     const deltaX = (gamma - gyroBaseX) * GYRO_SENSITIVITY;
     const deltaY = (beta - gyroBaseY) * GYRO_SENSITIVITY;
 
-    targetX = Math.max(-WIDTH/2, Math.min(WIDTH/2, deltaX * 8));
-    targetY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, deltaY * 8));
+    const maxTarget = TUNNEL_RADIUS;
+
+    targetX = Math.max(-maxTarget, Math.min(maxTarget, deltaX * 8));
+    targetY = Math.max(-maxTarget, Math.min(maxTarget, deltaY * 8));
 }
 
+// --- JOYSTICK INPUT HANDLERS ---
+function onTouchStart(e) {
+    if (gameState !== 'PLAYING' || e.touches.length > 1) return;
+    e.preventDefault(); 
+    isJoystickActive = true;
+    onTouchMove(e);
+}
+
+function onTouchMove(e) {
+    if (!isJoystickActive || gameState !== 'PLAYING') return;
+    e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    const rect = joystickContainer.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let deltaX = touch.clientX - centerX;
+    let deltaY = touch.clientY - centerY;
+    
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    if (distance > JOYSTICK_MAX_TRAVEL) {
+        const angle = Math.atan2(deltaY, deltaX);
+        deltaX = Math.cos(angle) * JOYSTICK_MAX_TRAVEL;
+        deltaY = Math.sin(angle) * JOYSTICK_MAX_TRAVEL;
+    }
+
+    joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    
+    const normalizedX = deltaX / JOYSTICK_MAX_TRAVEL;
+    const normalizedY = deltaY / JOYSTICK_MAX_TRAVEL;
+
+    targetX = normalizedX * JOYSTICK_MOVEMENT_SCALE;
+    targetY = normalizedY * JOYSTICK_MOVEMENT_SCALE;
+}
+
+function onTouchEnd() {
+    if (!isJoystickActive) return;
+    isJoystickActive = false;
+    
+    joystickHandle.style.transform = 'translate(0, 0)';
+    
+    targetX = 0; 
+    targetY = 0;
+}
+
+function setupJoystick() {
+    joystickContainer = document.getElementById('joystick-container');
+    joystickHandle = document.getElementById('joystick-handle');
+
+    if (joystickContainer) {
+        joystickContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+        joystickContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+        joystickContainer.addEventListener('touchend', onTouchEnd, { passive: true });
+        joystickContainer.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    }
+}
+// --- END JOYSTICK INPUT HANDLERS ---
+
+
+// Handle mouse movement (Desktop controls)
 gameContainer.addEventListener('mousemove', handleCursorMove);
-gameContainer.addEventListener('touchmove', handleCursorMove);
 
 // Keyboard controls
 window.addEventListener('keydown', (e) => {
@@ -645,14 +875,16 @@ window.addEventListener('keydown', (e) => {
 });
 
 function handleCursorMove(e) {
-    if (gameState !== 'PLAYING') return;
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
     
+    if (e.touches) return; 
+
     if (isGyroActive && gyroBaseX !== 0) return;
     
     if (e.cancelable) e.preventDefault();
     
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
     const screenCenterOffsetX = clientX - WIDTH / 2;
     const screenCenterOffsetY = clientY - HEIGHT / 2;
@@ -664,8 +896,8 @@ function handleCursorMove(e) {
 let lastTime = 0;
 
 function gameLoop(timestamp) {
-    if (gameState === 'START') {
-        render();
+    if (gameState === 'START' || gameState === 'PAUSED' || gameState === 'TUTORIAL') {
+        render(); // Always render for visual feedback
         requestAnimationFrame(gameLoop);
         return;
     }
@@ -693,11 +925,6 @@ function update(dt) {
     const targetCameraY = playerY * cameraMultiplier;
     cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
     cameraOffsetY += (targetCameraY - cameraOffsetY) * 0.08 * dt;
-
-    // Update trail
-    trail.push({ x: playerX, y: playerY, alpha: 1 });
-    if (trail.length > MAX_TRAIL_LENGTH) trail.shift();
-    trail.forEach(t => t.alpha *= 0.92);
 
     speed += 0.005 * dt;
     score += Math.floor(speed * dt);
@@ -800,8 +1027,17 @@ function crash() {
     canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
     setTimeout(() => canvas.style.transform = 'none', 50);
     
+    const finalScoreValue = Math.floor(score / 100);
+
+    if (finalScoreValue > highScore) {
+        highScore = finalScoreValue;
+        saveHighScore();
+        document.getElementById('finalScore').innerHTML = `NEW RECORD: <span style="color: #00ffff; font-weight:bold;">${finalScoreValue}</span>m`;
+    } else {
+        document.getElementById('finalScore').innerHTML = `You reached <span style="color:white; font-weight:bold;">${finalScoreValue}</span>m`;
+    }
+
     document.getElementById('ui-layer').classList.add('hidden');
-    document.getElementById('finalScore').innerText = Math.floor(score / 100);
     document.getElementById('gameOverScreen').classList.remove('hidden');
     gameContainer.style.cursor = 'auto';
 }
@@ -818,8 +1054,6 @@ function render() {
     const cx = WIDTH / 2;
     const cy = HEIGHT / 2;
     
-    const maxZ = path.reduce((max, p) => Math.max(max, p.z), 0);
-
     const pathLen = path.length;
     
     for (let i = pathLen - 2; i >= 0; i--) {
@@ -828,23 +1062,8 @@ function render() {
         
         if (seg1.z < 1 || seg2.z < 1) continue; 
 
-        drawTunnelSegment(cx, cy, seg1, seg2, maxZ);
+        drawTunnelSegment(cx, cy, seg1, seg2);
     }
-    
-    // Draw trail
-    for (let i = 0; i < trail.length; i++) {
-        const t = trail[i];
-        const trailAlpha = t.alpha * 0.5;
-        
-        ctx.fillStyle = `hsla(${hue}, 100%, 70%, ${trailAlpha})`;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = `hsla(${hue}, 100%, 70%, ${trailAlpha})`;
-        
-        ctx.beginPath();
-        ctx.arc(cx + t.x, cy + t.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    ctx.shadowBlur = 0;
     
     // Draw ship - simple triangle
     ctx.save();
@@ -872,7 +1091,7 @@ function render() {
     ctx.restore();
 }
 
-function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
+function drawTunnelSegment(cx, cy, seg1, seg2) {
     const scale1 = FOV / seg1.z;
     const scale2 = FOV / seg2.z;
 
@@ -881,9 +1100,6 @@ function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
     
     const outerRadius2 = TUNNEL_RADIUS * scale2;
     const innerRadius2 = outerRadius2 * WALL_THICKNESS;
-
-    const lineWidth = 2 + scale2 * 0.8;
-    const blurAmount = Math.max(0, 8 * scale2);
 
     let segmentHue = hue;
     const anchors = Array.from(segmentColors.keys()).sort((a, b) => a - b);
@@ -895,10 +1111,34 @@ function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
         }
     }
     
-    ctx.strokeStyle = `hsl(${segmentHue}, 100%, 65%)`;
+    // --- Thematic Styling Logic ---
+    let lineWidth, blurAmount, colorSaturation, colorLightness;
+
+    if (currentTheme === 'neon') {
+        lineWidth = 2 + scale2 * 1.0;
+        blurAmount = Math.max(0, 15 * scale2);
+        colorSaturation = '100%';
+        colorLightness = '70%';
+        ctx.globalAlpha = 1.0;
+    } else if (currentTheme === 'retro') {
+        lineWidth = 4 + scale2 * 0.5; 
+        blurAmount = 0; // Retro is now defined as no glow
+        colorSaturation = '80%';
+        colorLightness = '60%';
+        ctx.globalAlpha = 0.9;
+    } else if (currentTheme === 'pastel') {
+        lineWidth = 1 + scale2 * 0.5;
+        blurAmount = Math.max(0, 5 * scale2);
+        colorSaturation = '80%';
+        colorLightness = '85%'; 
+        ctx.globalAlpha = 0.9;
+    }
+
+    ctx.strokeStyle = `hsl(${segmentHue}, ${colorSaturation}, ${colorLightness})`;
     ctx.shadowBlur = blurAmount;
     ctx.shadowColor = ctx.strokeStyle;
     ctx.lineWidth = lineWidth;
+    // --- End Thematic Styling Logic ---
 
     const sides = currentTunnelShape;
     const angleStep = (Math.PI * 2) / sides;
@@ -935,17 +1175,22 @@ function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
             y: cy + centerY1Scaled + sin1b * innerRadius1 
         };
 
+        // Draw the inner wall segment lines (Quads are drawn as two triangles)
+        // Draw segment P3_I to P2_I 
         ctx.beginPath();
         ctx.moveTo(P3_I.x, P3_I.y);
         ctx.lineTo(P2_I.x, P2_I.y);
         ctx.stroke();
         
+        // Draw segment P3_I to P1_I
         ctx.beginPath();
         ctx.moveTo(P3_I.x, P3_I.y);
         ctx.lineTo(P1_I.x, P1_I.y);
         ctx.stroke();
     }
+    
     ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0; // Reset global alpha
 }
 
 function startGame() {
@@ -958,19 +1203,17 @@ function startGame() {
     gameContainer.style.cursor = 'none';
     
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    lastTime = performance.now();
-}
-
-function resetGame() {
-    gyroBaseX = 0;
-    gyroBaseY = 0;
     
-    document.getElementById('gameOverScreen').classList.add('hidden');
-    startGame(); 
+    // If not showing tutorial, start the timer immediately
+    if (gameState === 'PLAYING') {
+        lastTime = performance.now();
+    }
 }
 
 window.onload = function () {
     resize();
+    setupJoystick(); 
+    loadHighScore(); 
     ctx.fillStyle = '#000';
     ctx.fillRect(0,0,WIDTH, HEIGHT);
     requestAnimationFrame(gameLoop); 
