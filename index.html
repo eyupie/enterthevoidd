@@ -126,9 +126,14 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             text-transform: uppercase;
+            animation: glow 2s ease-in-out infinite;
         }
 
-        /* Mobile responsive title */
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.8)); }
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 36px;
@@ -136,10 +141,12 @@
             }
             
             .game-over-title {
-                font-size: 28px !important;
-                letter-spacing: 1px !important;
+                font-size: 18px !important;
+                letter-spacing: 0.5px !important;
                 line-height: 1.2;
-                word-break: break-word;
+                text-align: center;
+                padding: 0 15px;
+                white-space: nowrap;
             }
         }
 
@@ -236,7 +243,7 @@ const gameContainer = document.getElementById('game-container');
 
 const SIDES = 6;
 const FOV = 800;
-const SEGMENT_DEPTH = 30;
+const SEGMENT_DEPTH = 20; // Reduced from 30 for more frequent segments
 const WALL_THICKNESS = 0.8;
 const TUNNEL_RADIUS = 300;
 const MAX_PATH_DEVIATION = 150;
@@ -255,6 +262,10 @@ let playerY = 0;
 let targetX = 0;
 let targetY = 0;
 
+// Camera offset for parallax effect
+let cameraOffsetX = 0;
+let cameraOffsetY = 0;
+
 const SENSITIVITY_SCALE = 0.5;
 const SMOOTHING_FACTOR = 0.15;
 
@@ -262,9 +273,14 @@ const SMOOTHING_FACTOR = 0.15;
 let isGyroActive = false;
 let gyroBaseX = 0;
 let gyroBaseY = 0;
-const GYRO_SENSITIVITY = 1.2; // Adjust tilt sensitivity
+const GYRO_SENSITIVITY = 0.6;
+
+// Particle system for enhanced visuals
+let particles = [];
+const MAX_PARTICLES = 60; // Reduced for performance
 
 let path = [];
+let segmentColors = new Map(); // Store color for each segment
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioCtx = new AudioContext();
@@ -301,12 +317,61 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// Particle system
+function createParticle() {
+    return {
+        x: Math.random() * WIDTH,
+        y: Math.random() * HEIGHT,
+        z: Math.random() * 1000 + 500,
+        speed: Math.random() * 2 + 1,
+        size: Math.random() * 2 + 1,
+        brightness: Math.random() * 0.5 + 0.5
+    };
+}
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+        particles.push(createParticle());
+    }
+}
+
+function updateParticles(dt) {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.z -= speed * dt * 2;
+        
+        if (p.z < 1) {
+            particles[i] = createParticle();
+        }
+    }
+}
+
+function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const scale = FOV / p.z;
+        const x = (p.x - WIDTH / 2) * scale + WIDTH / 2;
+        const y = (p.y - HEIGHT / 2) * scale + HEIGHT / 2;
+        const size = p.size * scale;
+        
+        if (x > 0 && x < WIDTH && y > 0 && y < HEIGHT) {
+            const alpha = p.brightness * (1 - p.z / 1500);
+            ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
 function generateNextPathPoint() {
     const latestAnchor = path.filter(p => p.isAnchor).sort((a, b) => b.z - a.z)[0] || 
                          { z: -ANCHOR_SPACING, centerX: 0, centerY: 0, rotation: 0, isAnchor: true };
                          
     const nextZ = latestAnchor.z + ANCHOR_SPACING;
 
+    // Back to original turning intensity
     const newX = latestAnchor.centerX + (Math.random() - 0.5) * 200;
     const newY = latestAnchor.centerY + (Math.random() - 0.5) * 200;
     
@@ -314,6 +379,9 @@ function generateNextPathPoint() {
     const clampedY = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newY));
 
     const newRotation = latestAnchor.rotation + (Math.random() - 0.5) * 0.5;
+
+    // Change hue significantly for each new tunnel section
+    hue = (hue + 60 + Math.random() * 40) % 360;
 
     path.push({
         z: nextZ,
@@ -368,6 +436,7 @@ function initTunnel() {
 
 function initGame() {
     initTunnel();
+    initParticles();
     speed = BASE_SPEED;
     score = 0;
     playerX = 0;
@@ -379,7 +448,6 @@ function initGame() {
     gameState = 'PLAYING'; 
 }
 
-// Request gyroscope permission for iOS 13+
 async function requestGyroPermission() {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         try {
@@ -403,36 +471,31 @@ function enableGyroscope() {
 function handleGyroscope(e) {
     if (gameState !== 'PLAYING' || !isGyroActive) return;
     
-    // beta: front-back tilt (-180 to 180), gamma: left-right tilt (-90 to 90)
-    const beta = e.beta || 0;   // Forward/backward
-    const gamma = e.gamma || 0; // Left/right
+    const beta = e.beta || 0;
+    const gamma = e.gamma || 0;
 
-    // Set baseline on first read
     if (gyroBaseX === 0 && gyroBaseY === 0) {
         gyroBaseX = gamma;
         gyroBaseY = beta;
     }
 
-    // Calculate relative tilt from baseline
     const deltaX = (gamma - gyroBaseX) * GYRO_SENSITIVITY;
     const deltaY = (beta - gyroBaseY) * GYRO_SENSITIVITY;
 
-    // Update target position based on tilt
     targetX = Math.max(-WIDTH/2, Math.min(WIDTH/2, deltaX * 10));
     targetY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, deltaY * 10));
 }
 
-// Mouse/Cursor Control (Desktop fallback)
 gameContainer.addEventListener('mousemove', handleCursorMove);
 gameContainer.addEventListener('touchmove', handleCursorMove);
 
 function handleCursorMove(e) {
     if (gameState !== 'PLAYING') return;
     
-    // Only use cursor if gyroscope is not active
-    if (isGyroActive) return;
+    // Only block cursor if gyroscope is working AND orientation data is being received
+    if (isGyroActive && gyroBaseX !== 0) return;
     
-    e.preventDefault(); 
+    if (e.cancelable) e.preventDefault(); 
     
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
@@ -471,9 +534,16 @@ function update(dt) {
     playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
     playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
 
+    // Camera follows cursor position for perspective shift
+    const targetCameraX = -playerX * 0.25;
+    const targetCameraY = -playerY * 0.25;
+    cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
+    cameraOffsetY += (targetCameraY - cameraOffsetY) * 0.08 * dt;
+
     speed += 0.005 * dt;
     score += Math.floor(speed * dt);
-    hue = (hue + 0.5 * dt) % 360;
+
+    updateParticles(dt);
 
     const moveZ = speed * dt;
     
@@ -555,9 +625,8 @@ function crash() {
     speed = 0;
     playSound('crash');
     
-    // Vibration on crash (mobile devices)
     if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]); // Vibrate pattern: 200ms, pause 100ms, 200ms
+        navigator.vibrate([200, 100, 200]);
     }
     
     canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
@@ -573,12 +642,22 @@ function render() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+    // Apply camera offset for parallax effect
+    ctx.save();
+    ctx.translate(cameraOffsetX, cameraOffsetY);
+
+    // Draw particles first (background layer)
+    drawParticles();
+
     const cx = WIDTH / 2;
     const cy = HEIGHT / 2;
     
     const maxZ = path.reduce((max, p) => Math.max(max, p.z), 0);
 
-    for (let i = path.length - 2; i >= 0; i--) {
+    // Cache frequently used values
+    const pathLen = path.length;
+    
+    for (let i = pathLen - 2; i >= 0; i--) {
         const seg1 = path[i];
         const seg2 = path[i + 1];
         
@@ -587,11 +666,13 @@ function render() {
         drawTunnelSegment(cx, cy, seg1, seg2, maxZ);
     }
     
+    // Draw ship with enhanced glow
     ctx.save();
     ctx.translate(cx + playerX, cy + playerY);
     
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
+    // Multiple glow layers for intense effect
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
     ctx.fillStyle = '#fff';
     
     ctx.beginPath();
@@ -601,6 +682,14 @@ function render() {
     ctx.closePath();
     ctx.fill();
     
+    // Second glow layer
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = `hsla(${hue + 180}, 100%, 60%, 0.5)`;
+    ctx.fill();
+    
+    ctx.restore();
+    
+    // Restore camera transform
     ctx.restore();
 }
 
@@ -615,25 +704,56 @@ function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
     const innerRadius2 = outerRadius2 * WALL_THICKNESS;
 
     const normalizedDepth = seg2.z / maxZ;
-    const lineBrightness = 60 + (1 - normalizedDepth) * 35;
-    const lineWidth = 1 + scale2 * 0.5; 
-    const blurAmount = Math.max(0, 6 * scale2); 
+    const lineBrightness = 70 + (1 - normalizedDepth) * 30;
+    const lineWidth = 1.5 + scale2 * 0.6;
+    const blurAmount = Math.max(0, 15 * scale2); // Increased glow
 
+    // Psychedelic color shifting - multiple frequencies
+    const segmentHue = (hue + (seg2.z * 0.5) + Math.sin(seg2.z * 0.1) * 60) % 360;
+    const saturation = 100;
+    
+    // Pulsing effect
+    const pulse = Math.sin(Date.now() * 0.003 + seg2.z * 0.05) * 10;
+    const finalBrightness = Math.max(60, Math.min(90, lineBrightness + pulse));
+
+    ctx.strokeStyle = `hsl(${segmentHue}, ${saturation}%, ${finalBrightness}%)`;
+    ctx.shadowBlur = blurAmount; 
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.lineWidth = lineWidth;
+
+    const PI_THIRD = Math.PI / 3;
+    
     for (let j = 0; j < SIDES; j++) {
-        const angle1_a = j * (Math.PI / 3) + seg1.rotation;
-        const angle1_b = (j + 1) * (Math.PI / 3) + seg1.rotation;
-        const angle2_a = j * (Math.PI / 3) + seg2.rotation;
+        const angle1_a = j * PI_THIRD + seg1.rotation;
+        const angle1_b = (j + 1) * PI_THIRD + seg1.rotation;
+        const angle2_a = j * PI_THIRD + seg2.rotation;
 
-        const P3_I = { x: cx + seg2.centerX * scale2 + Math.cos(angle2_a) * innerRadius2, y: cy + seg2.centerY * scale2 + Math.sin(angle2_a) * innerRadius2 };
-        
-        const P1_I = { x: cx + seg1.centerX * scale1 + Math.cos(angle1_a) * innerRadius1, y: cy + seg1.centerY * scale1 + Math.sin(angle1_a) * innerRadius1 };
-        const P2_I = { x: cx + seg1.centerX * scale1 + Math.cos(angle1_b) * innerRadius1, y: cy + seg1.centerY * scale1 + Math.sin(angle1_b) * innerRadius1 };
+        const cos2a = Math.cos(angle2_a);
+        const sin2a = Math.sin(angle2_a);
+        const cos1a = Math.cos(angle1_a);
+        const sin1a = Math.sin(angle1_a);
+        const cos1b = Math.cos(angle1_b);
+        const sin1b = Math.sin(angle1_b);
 
-        ctx.strokeStyle = `hsl(${hue + j * 10}, 100%, ${lineBrightness}%)`;
+        const centerX2Scaled = seg2.centerX * scale2;
+        const centerY2Scaled = seg2.centerY * scale2;
+        const centerX1Scaled = seg1.centerX * scale1;
+        const centerY1Scaled = seg1.centerY * scale1;
+
+        const P3_I = { 
+            x: cx + centerX2Scaled + cos2a * innerRadius2, 
+            y: cy + centerY2Scaled + sin2a * innerRadius2 
+        };
         
-        ctx.shadowBlur = blurAmount; 
-        ctx.shadowColor = ctx.strokeStyle;
-        ctx.lineWidth = lineWidth; 
+        const P1_I = { 
+            x: cx + centerX1Scaled + cos1a * innerRadius1, 
+            y: cy + centerY1Scaled + sin1a * innerRadius1 
+        };
+        
+        const P2_I = { 
+            x: cx + centerX1Scaled + cos1b * innerRadius1, 
+            y: cy + centerY1Scaled + sin1b * innerRadius1 
+        };
 
         ctx.beginPath();
         ctx.moveTo(P3_I.x, P3_I.y);
@@ -651,7 +771,6 @@ function drawTunnelSegment(cx, cy, seg1, seg2, maxZ) {
 function startGame() {
     initGame(); 
     
-    // Request gyroscope permission on mobile
     requestGyroPermission();
     
     document.getElementById('startScreen').classList.add('hidden');
@@ -663,7 +782,6 @@ function startGame() {
 }
 
 function resetGame() {
-    // Reset gyroscope baseline
     gyroBaseX = 0;
     gyroBaseY = 0;
     
