@@ -10,10 +10,9 @@
     </script>
     <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOID</title>
     <style>
-        /* Import a futuristic, legible font */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
         body {
@@ -44,914 +43,1181 @@
             display: block;
             width: 100%;
             height: 100%;
-            /* Ensure the canvas covers the whole container */
         }
 
-        /* General UI styling for screens, messages, and menus */
-        .ui-screen {
+        .ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .hud-left {
+            display: flex;
+            gap: 40px; /* Space between current score and high score */
+        }
+
+        .score-container {
+            text-align: left;
+        }
+
+        .high-score-hud {
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+
+        .score-val {
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .score-val.small {
+            font-size: 28px;
+            color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
+        }
+
+        .speed-meter {
+            text-align: right;
+        }
+
+        .speed-val {
+            font-size: 24px;
+            color: #00ffff;
+        }
+
+        .pause-btn {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #fff;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+
+        .pause-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .pause-icon {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pause-icon span {
+            width: 3px;
+            height: 16px;
+            background: #fff;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 12px solid #fff;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            margin-left: 3px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            transition: opacity 0.3s;
             padding: 20px;
             box-sizing: border-box;
+        }
+        
+        #tutorialScreen {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            max-width: 600px;
             text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #tutorialScreen .btn {
+            margin-top: 30px;
+            font-size: 20px;
+            padding: 15px 40px;
         }
 
         .hidden {
-            display: none !important;
+            opacity: 0;
+            pointer-events: none;
         }
 
         h1 {
-            color: #00FFFF; /* Cyan */
-            text-shadow: 0 0 15px #00FFFF;
-            font-size: clamp(2rem, 8vw, 4rem);
+            font-size: 64px;
+            margin: 0;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, #ff0055, #00ffff, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.8)); }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 36px;
+                letter-spacing: 2px;
+            }
+            
+            .game-over-title {
+                font-size: 18px !important;
+                letter-spacing: 0.5px !important;
+                line-height: 1.2;
+                text-align: center;
+                padding: 0 15px;
+                white-space: nowrap;
+            }
+            .hud-left {
+                gap: 15px;
+            }
+            .score-val {
+                font-size: 36px;
+            }
+            .score-val.small {
+                font-size: 20px;
+            }
+        }
+
+        p {
+            color: #ccc;
+            font-size: 18px;
+            margin-top: 10px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn {
+            margin-top: 40px;
+            padding: 20px 60px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 3px solid #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .key {
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #aaa;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
             margin-bottom: 20px;
         }
 
-        .game-info {
-            font-size: clamp(0.8rem, 3vw, 1.2rem);
-            margin-bottom: 30px;
-            color: #00FF7F; /* Spring Green */
-        }
-
-        .button {
-            padding: 12px 25px;
+        .theme-btn {
+            padding: 10px 20px;
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(0.9rem, 4vw, 1.1rem);
-            background: linear-gradient(135deg, #00FFFF 0%, #00FF7F 100%);
-            color: #000;
-            border: 2px solid #00FFFF;
-            border-radius: 8px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #666;
+            color: #aaa;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.6), 0 0 20px rgba(0, 255, 127, 0.4);
-            transition: all 0.2s ease-in-out;
-            text-transform: uppercase;
-            font-weight: 700;
+            transition: all 0.2s;
         }
 
-        .button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px #00FFFF, 0 0 30px #00FF7F;
+        .theme-btn.active {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255,255,255,0.2);
         }
         
-        .button:active {
-            transform: scale(0.98);
-        }
+        /* --- STYLES FOR VIRTUAL JOYSTICK --- */
+        @media (max-width: 768px) {
+            #joystick-container {
+                pointer-events: auto;
+                width: 150px;
+                height: 150px;
+                position: absolute;
+                bottom: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 255, 255, 0.05);
+                border: 2px solid rgba(0, 255, 255, 0.2);
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 15;
+                opacity: 0.8;
+                touch-action: none; 
+            }
 
-        /* Score and UI elements */
-        #score-display {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #00FF7F;
-            font-size: clamp(1rem, 3vw, 1.5rem);
-            z-index: 5;
-            text-shadow: 0 0 5px #00FF7F;
+            #joystick-handle {
+                width: 60px;
+                height: 60px;
+                background: rgba(0, 255, 255, 0.5);
+                border: 2px solid #00ffff;
+                border-radius: 50%;
+                box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+                transform: translate(0, 0);
+                position: absolute;
+                transition: all 0.05s ease-out;
+            }
         }
-        
-        #message-box {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 25px;
-            background-color: rgba(0, 0, 0, 0.8);
-            border: 2px solid #FF4500;
-            border-radius: 8px;
-            color: #FF4500;
-            font-size: clamp(1rem, 4vw, 1.5rem);
-            text-shadow: 0 0 10px #FF4500;
-            z-index: 10;
-            display: none;
+        /* Hide joystick on desktop */
+        @media (min-width: 769px) {
+            #joystick-container {
+                display: none;
+            }
         }
+        /* --- END JOYSTICK STYLES --- */
 
-        /* Mobile specific style for interaction area */
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Allows clicks to pass through to canvas if needed, but not necessary here */
-        }
-        
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="score-display">SCORE: 0</div>
-    <div id="message-box"></div>
     <canvas id="gameCanvas"></canvas>
-    
-    <!-- Start Screen -->
-    <div id="startScreen" class="ui-screen">
-        <h1>VOID</h1>
-        <div class="game-info">
-            <p>Control the reticle to destroy the incoming segments before they complete the target shape.</p>
-            <p>Desktop: Mouse movement and click (Fire).</p>
-            <p>Mobile: Device tilt/gyro (Move) and tap (Fire).</p>
+
+    <div id="ui-layer" class="ui-layer hidden">
+        <div class="hud-top">
+            <div class="hud-left">
+                <!-- High Score Display in HUD -->
+                <div class="score-container high-score-hud">
+                    <div class="score-label">HIGH SCORE</div>
+                    <div class="score-val small" id="highScoreDisplayUI">0</div>
+                </div>
+
+                <!-- Current Score Display -->
+                <div class="score-container">
+                    <div class="score-label">DISTANCE</div>
+                    <div class="score-val" id="scoreDisplay">0</div>
+                </div>
+            </div>
+
+            <div class="speed-meter">
+                <div class="score-label">VELOCITY</div>
+                <div class="speed-val" id="speedDisplay">MACH 1</div>
+            </div>
         </div>
-        <button id="startButton" class="button">Start Calibration</button>
+        <button class="pause-btn" id="pauseBtn" onclick="togglePause()">
+            <div class="pause-icon" id="pauseIcon">
+                <span></span>
+                <span></span>
+            </div>
+        </button>
+
+        <!-- VIRTUAL JOYSTICK CONTROL -->
+        <div id="joystick-container">
+            <div id="joystick-handle"></div>
+        </div>
+        <!-- END JOYSTICK -->
     </div>
 
-    <!-- Game Over Screen -->
-    <div id="gameOverScreen" class="ui-screen hidden">
-        <h1>GAME OVER</h1>
-        <div class="game-info">
-            <p>Final Score: <span id="finalScore">0</span></p>
-            <p id="bestScoreText">Best Score: 0</p>
+    <div id="startScreen" class="screen">
+        <h1>VOID</h1>
+        <p>Enter the void. Get lost.</p>
+        
+        <!-- High Score on Start Screen -->
+        <div class="score-container" style="text-align: center; margin-bottom: 20px;">
+            <div class="score-label">ALL-TIME HIGH</div>
+            <div class="score-val" id="highScoreDisplayStart" style="font-size: 32px; color: #ff5500; text-shadow: 0 0 15px rgba(255, 85, 0, 0.7);">0</div>
         </div>
-        <button id="restartButton" class="button">Restart VOID</button>
+
+        <div class="theme-selector">
+            <button class="theme-btn active" onclick="setTheme('neon')">NEON</button>
+            <button class="theme-btn" onclick="setTheme('retro')">RETRO</button>
+            <button class="theme-btn" onclick="setTheme('pastel')">PASTEL</button>
+        </div>
+        
+        <div class="controls-hint">
+            <span><span class="key">TILT / CURSOR</span> STEER SHIP</span>
+        </div>
+
+        <button class="btn" onclick="startGame()">ENTER THE VOID</button>
     </div>
-    
-    <div id="ui-layer" class="hidden">
-        <!-- Optional Mobile Fire button overlay - not strictly needed if tap works on canvas -->
+
+    <!-- NEW TUTORIAL SCREEN -->
+    <div id="tutorialScreen" class="screen hidden">
+        <h1 style="font-size: 36px; margin-bottom: 20px; -webkit-text-fill-color: #00ffff; color: #00ffff;">NAVIGATION PROTOCOL</h1>
+        <p style="font-size: 20px; color: #fff; line-height: 1.8;">
+            <span style="color: #00ffff; font-weight: 700;">OBJECTIVE:</span> Navigate the unstable tunnel to achieve maximum distance.
+            <br>
+            <span style="color: #00ffff; font-weight: 700;">CONTROL:</span> Move your cursor (or tilt your device) to steer your ship.
+            <br>
+            <span style="color: #ff0055; font-weight: 700;">WARNING:</span> Collision with the outer ring will result in catastrophic failure.
+        </p>
+        <button class="btn" onclick="hideTutorial()">COMMENCE</button>
+    </div>
+    <!-- END NEW TUTORIAL SCREEN -->
+
+    <div id="gameOverScreen" class="screen hidden">
+        <h1 class="game-over-title" style="font-size: 48px; color: #ff0055; -webkit-text-fill-color: #ff0055;">CATASTROPHIC DENSITY</h1>
+        <p id="finalScore">You reached <span style="color:white; font-weight:bold;">0</span>m</p>
+        <button class="btn" id="gameOverRestartBtn" onclick="quitToMenu()">RESTART</button>
+    </div>
+
+    <div id="pauseScreen" class="screen hidden">
+        <h1 style="font-size: 48px;">PAUSED</h1>
+        <button class="btn" onclick="togglePause()">RESUME</button>
+        <button class="btn" onclick="quitToMenu()" style="margin-top: 20px;">QUIT</button>
     </div>
 </div>
 
-<script type="module">
-    // Helper function to convert base64 audio to ArrayBuffer for Web Audio API
-    function base64ToArrayBuffer(base64) {
-        const binaryString = atob(base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes.buffer;
-    }
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('game-container');
 
-    // Helper function to convert raw PCM data (Int16Array) to a WAV Blob
-    function pcmToWav(pcmData, sampleRate) {
-        const numChannels = 1;
-        const sampleBits = 16;
-        const bytesPerSample = sampleBits / 8;
-        const blockAlign = numChannels * bytesPerSample;
-        const byteRate = sampleRate * blockAlign;
-        const dataSize = pcmData.byteLength;
-        const buffer = new ArrayBuffer(44 + dataSize);
-        const view = new DataView(buffer);
-        let offset = 0;
+const SIDES = 6;
+const FOV = 800;
+const SEGMENT_DEPTH = 20;
+const WALL_THICKNESS = 0.8;
+const TUNNEL_RADIUS = 300;
+const MAX_PATH_DEVIATION = 150;
+const ANCHOR_SPACING = SEGMENT_DEPTH * 10;
 
-        function writeString(str) {
-            for (let i = 0; i < str.length; i++) {
-                view.setUint8(offset++, str.charCodeAt(i));
-            }
-        }
+let WIDTH, HEIGHT;
 
-        // RIFF chunk
-        writeString('RIFF');
-        view.setUint32(offset, 36 + dataSize, true); offset += 4;
-        writeString('WAVE');
+let gameState = 'START';
+let score = 0;
+let speed = 0;
+const BASE_SPEED = 8; 
+let hue = 0;
+let highScore = 0; 
 
-        // FMT chunk
-        writeString('fmt ');
-        view.setUint32(offset, 16, true); offset += 4; // Sub-chunk size
-        view.setUint16(offset, 1, true); offset += 2;  // Audio format (PCM = 1)
-        view.setUint16(offset, numChannels, true); offset += 2;
-        view.setUint32(offset, sampleRate, true); offset += 4;
-        view.setUint32(offset, byteRate, true); offset += 4;
-        view.setUint16(offset, blockAlign, true); offset += 2;
-        view.setUint16(offset, sampleBits, true); offset += 2;
+let playerX = 0;
+let playerY = 0;
+let targetX = 0;
+let targetY = 0;
 
-        // DATA chunk
-        writeString('data');
-        view.setUint32(offset, dataSize, true); offset += 4;
+let cameraOffsetX = 0;
+let cameraOffsetY = 0;
 
-        // Write PCM data
-        for (let i = 0; i < pcmData.length; i++) {
-            view.setInt16(offset, pcmData[i], true);
-            offset += 2;
-        }
+const SENSITIVITY_SCALE = 0.5;
+const SMOOTHING_FACTOR = 0.15;
 
-        return new Blob([view], { type: 'audio/wav' });
-    }
+let isGyroActive = false;
+let gyroBaseX = 0;
+let gyroBaseY = 0;
+const GYRO_SENSITIVITY = 0.3;
 
-    // --- GAME INITIALIZATION ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const gameContainer = document.getElementById('game-container');
-    const scoreDisplay = document.getElementById('score-display');
-    const finalScoreSpan = document.getElementById('finalScore');
-    const bestScoreText = document.getElementById('bestScoreText');
-    const messageBox = document.getElementById('message-box');
+// JOYSTICK VARIABLES
+let isJoystickActive = false;
+let joystickContainer = null;
+let joystickHandle = null;
+const JOYSTICK_MAX_TRAVEL = 45; 
+const JOYSTICK_MOVEMENT_SCALE = TUNNEL_RADIUS; 
+// END JOYSTICK VARIABLES
 
-    // Constants for Game Logic
-    const TARGET_RADIUS_MIN = 80;
-    const TARGET_RADIUS_MAX = 200;
-    const SEGMENTS_MIN = 5;
-    const SEGMENTS_MAX = 12;
-    const SEGMENT_SPEED_BASE = 0.0005; // Base angle speed
-    const SEGMENT_LERP_SPEED = 0.05; // Speed for segments to snap to angle
+// Color themes and aesthetics
+let currentTheme = 'neon';
+const COLOR_THEMES = {
+    // Neon theme: bright, contrasting hues, high glow
+    neon: [0, 30, 60, 120, 180, 210, 240, 270, 300, 330],
+    // Retro theme: saturated, 80s inspired, no glow
+    retro: [0, 45, 90, 135, 180, 225, 270, 315],
+    // Pastel theme: light, soft tones, slight glow
+    pastel: [15, 75, 135, 195, 255, 315]
+};
 
-    // Constants for mobile/gyro control (ADJUSTED FOR LESS SENSITIVITY)
-    const GYRO_SENSITIVITY = 0.25; // Max movement range is 25% of the screen width/height from the center
-    const GYRO_TILT_RANGE = 20; // Degrees of tilt considered 'full' movement (less than 90)
+let currentColorIndex = 0;
 
-    // Game state variables
-    let target = null;
-    let score = 0;
-    let bestScore = localStorage.getItem('voidBestScore') ? parseInt(localStorage.getItem('voidBestScore')) : 0;
-    let gameOver = false;
-    let isPlaying = false;
-    let lastTime = 0;
-    let deltaTime = 0;
-    let audioCtx;
-    let level = 1;
+// Tunnel variations
+let currentTunnelShape = 6; // sides
+let nextShapeChange = 1000;
 
-    // Player (Ship/Reticle)
-    let shipTargetX = 0;
-    let shipTargetY = 0;
-    // Ship radius ADJUSTED for smaller size
-    let ship = { x: 0, y: 0, radius: 12, color: '#00FFFF', angle: 0 }; 
-    let projectiles = [];
+let particles = [];
+const MAX_PARTICLES = 60;
 
-    // Mobile/Gyro State
-    let isMobile = false;
-    let gyroAlpha = 0;
-    let gyroBeta = 0;
-    let gyroGamma = 0;
-    let touchEnabled = false; // Flag for touch interaction
+let path = [];
+let segmentColors = new Map();
 
-    // --- UTILITY FUNCTIONS ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
 
-    function lerp(start, end, t) {
-        return start + (end - start) * t;
-    }
-
-    function dist(x1, y1, x2, y2) {
-        return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-    }
-
-    function mapRange(value, inMin, inMax, outMin, outMax) {
-        return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-    }
-
-    function showMessage(text, duration = 1500, color = '#FF4500') {
-        messageBox.textContent = text;
-        messageBox.style.color = color;
-        messageBox.style.borderColor = color;
-        messageBox.style.textShadow = `0 0 10px ${color}`;
-        messageBox.style.display = 'block';
-        setTimeout(() => {
-            messageBox.style.display = 'none';
-        }, duration);
-    }
-
-    // --- AUDIO GENERATION AND PLAYBACK ---
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
     
-    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=";
-    const apiKey = ""; 
+    const now = audioCtx.currentTime;
 
-    async function playTextToSpeech(text, voiceName = "Kore") {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'crash') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+}
 
-        // Resume audio context if suspended (needed for first interaction on some browsers)
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
+// --- High Score and Tutorial Functions ---
+function loadHighScore() {
+    const storedScore = localStorage.getItem('void_high_score');
+    highScore = storedScore ? parseInt(storedScore, 10) : 0;
+    updateHighScoreDisplay();
+}
+
+function saveHighScore() {
+    localStorage.setItem('void_high_score', highScore);
+    updateHighScoreDisplay();
+}
+
+function updateHighScoreDisplay() {
+    document.getElementById('highScoreDisplayStart').innerText = highScore;
+    // Check if the UI element exists before trying to update it (it might be hidden)
+    const uiDisplay = document.getElementById('highScoreDisplayUI');
+    if (uiDisplay) {
+        uiDisplay.innerText = highScore;
+    }
+}
+// ----------------------------
+
+function resize() {
+    WIDTH = canvas.parentElement.clientWidth;
+    HEIGHT = canvas.parentElement.clientHeight;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+}
+window.addEventListener('resize', resize);
+resize();
+
+function createParticle() {
+    return {
+        x: Math.random() * WIDTH,
+        y: Math.random() * HEIGHT,
+        z: Math.random() * 1000 + 500,
+        speed: Math.random() * 2 + 1,
+        size: Math.random() * 2 + 1,
+        brightness: Math.random() * 0.5 + 0.5
+    };
+}
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+        particles.push(createParticle());
+    }
+}
+
+function updateParticles(dt) {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.z -= speed * dt * 2;
         
-        const payload = {
-            contents: [{ parts: [{ text: text }] }],
-            generationConfig: {
-                responseModalities: ["AUDIO"],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: voiceName }
-                    }
-                }
-            },
-            model: "gemini-2.5-flash-preview-tts"
-        };
+        if (p.z < 1) {
+            particles[i] = createParticle();
+        }
+    }
+}
 
-        try {
-            const response = await fetch(API_URL + apiKey, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const scale = FOV / p.z;
+        const x = (p.x - WIDTH / 2) * scale + WIDTH / 2;
+        const y = (p.y - HEIGHT / 2) * scale + HEIGHT / 2;
+        const size = p.size * scale;
+        
+        if (x > 0 && x < WIDTH && y > 0 && y < HEIGHT) {
+            const alpha = p.brightness * (1 - p.z / 1500);
+            ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+function generateNextPathPoint() {
+    const latestAnchor = path.filter(p => p.isAnchor).sort((a, b) => b.z - a.z)[0] || 
+                         { z: -ANCHOR_SPACING, centerX: 0, centerY: 0, rotation: 0, isAnchor: true };
+                         
+    const nextZ = latestAnchor.z + ANCHOR_SPACING;
+
+    const newX = latestAnchor.centerX + (Math.random() - 0.5) * 200;
+    const newY = latestAnchor.centerY + (Math.random() - 0.5) * 200;
+    
+    const clampedX = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newX));
+    const clampedY = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newY));
+
+    const newRotation = latestAnchor.rotation + (Math.random() - 0.5) * 0.5;
+
+    const palette = COLOR_THEMES[currentTheme];
+    const segmentColor = palette[currentColorIndex];
+    currentColorIndex = (currentColorIndex + 1) % palette.length;
+    
+    segmentColors.set(nextZ, segmentColor);
+
+    path.push({
+        z: nextZ,
+        centerX: clampedX,
+        centerY: clampedY,
+        rotation: newRotation,
+        isAnchor: true 
+    });
+
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initTunnel() {
+    path = [];
+    segmentColors.clear();
+    
+    path.push({ z: 0, centerX: 0, centerY: 0, rotation: 0, isAnchor: true });
+    segmentColors.set(0, hue);
+    
+    for(let i=0; i < 5; i++) {
+        generateNextPathPoint();
+    }
+
+    let currentZ = 0;
+    const maxZ = path[path.length - 1].z;
+    
+    while(currentZ < maxZ) {
+        currentZ += SEGMENT_DEPTH;
+
+        const p1 = path.filter(p => p.isAnchor && p.z <= currentZ)
+                       .sort((a, b) => b.z - a.z)[0]; 
+
+        const p2 = path.filter(p => p.isAnchor && p.z > currentZ)
+                     .sort((a, b) => a.z - b.z)[0]; 
+
+        if (p1 && p2 && currentZ < p2.z) {
+            const t = ((currentZ - p1.z) / (p2.z - p1.z)); 
+            
+            const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+            const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+            const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+            
+            path.push({
+                z: currentZ,
+                centerX: x,
+                centerY: y,
+                rotation: r,
+                isAnchor: false
             });
+        }
+    }
+    path.sort((a, b) => a.z - b.z);
+}
 
-            if (!response.ok) {
-                console.error("TTS API call failed:", response.status, await response.text());
-                return;
-            }
+function initGame() {
+    loadHighScore(); 
+    initTunnel();
+    initParticles();
+    speed = BASE_SPEED;
+    score = 0;
+    playerX = 0;
+    playerY = 0;
+    targetX = 0;
+    targetY = 0;
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
+    currentColorIndex = 0;
+    currentTunnelShape = 6;
+    nextShapeChange = 1000;
+    
+    isJoystickActive = false; 
+    
+    // Check if tutorial should be shown
+    if (localStorage.getItem('void_has_played')) {
+        gameState = 'PLAYING';
+    } else {
+        gameState = 'TUTORIAL';
+        document.getElementById('tutorialScreen').classList.remove('hidden');
+    }
+}
 
-            const result = await response.json();
-            const part = result?.candidates?.[0]?.content?.parts?.[0];
-            const audioData = part?.inlineData?.data;
-            const mimeType = part?.inlineData?.mimeType;
+function hideTutorial() {
+    localStorage.setItem('void_has_played', 'true');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    gameState = 'PLAYING';
+    lastTime = performance.now(); // Reset timer to prevent jump
+}
 
-            if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                // Extract sample rate from mimeType, e.g., audio/L16;rate=24000
-                const rateMatch = mimeType.match(/rate=(\d+)/);
-                const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
-                
-                const pcmData = base64ToArrayBuffer(audioData);
-                const pcm16 = new Int16Array(pcmData);
-                const wavBlob = pcmToWav(pcm16, sampleRate);
-                const audioUrl = URL.createObjectURL(wavBlob);
+function setTheme(theme) {
+    currentTheme = theme;
+    currentColorIndex = 0;
+    
+    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
+}
 
-                const audio = new Audio(audioUrl);
-                audio.play().catch(e => console.error("Audio playback failed:", e));
+function togglePause() {
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseIcon = document.getElementById('pauseIcon');
+    
+    if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        document.getElementById('pauseScreen').classList.remove('hidden');
+        pauseIcon.innerHTML = '<div class="play-icon"></div>';
+    } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        document.getElementById('pauseScreen').classList.add('hidden');
+        pauseIcon.innerHTML = '<span></span><span></span>';
+        lastTime = performance.now();
+    }
+}
 
-                audio.onended = () => {
-                    URL.revokeObjectURL(audioUrl); // Clean up the Blob URL
-                };
-            } else {
-                console.error("No valid audio data received from TTS API.");
+function quitToMenu() {
+    gameState = 'START';
+    document.getElementById('pauseScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    gameContainer.style.cursor = 'auto';
+    loadHighScore(); 
+}
+
+async function requestGyroPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === 'granted') {
+                enableGyroscope();
             }
         } catch (error) {
-            console.error("Error fetching TTS audio:", error);
+            console.log('Gyroscope permission denied');
+        }
+    } else {
+        enableGyroscope();
+    }
+}
+
+function enableGyroscope() {
+    window.addEventListener('deviceorientation', handleGyroscope);
+    isGyroActive = true;
+}
+
+function handleGyroscope(e) {
+    if (gameState !== 'PLAYING' || !isGyroActive || isJoystickActive) return;
+    
+    const beta = e.beta || 0;
+    const gamma = e.gamma || 0;
+
+    if (gyroBaseX === 0 && gyroBaseY === 0) {
+        gyroBaseX = gamma;
+        gyroBaseY = beta;
+    }
+
+    const deltaX = (gamma - gyroBaseX) * GYRO_SENSITIVITY;
+    const deltaY = (beta - gyroBaseY) * GYRO_SENSITIVITY;
+
+    const maxTarget = TUNNEL_RADIUS;
+
+    targetX = Math.max(-maxTarget, Math.min(maxTarget, deltaX * 8));
+    targetY = Math.max(-maxTarget, Math.min(maxTarget, deltaY * 8));
+}
+
+// --- JOYSTICK INPUT HANDLERS ---
+function onTouchStart(e) {
+    if (gameState !== 'PLAYING' || e.touches.length > 1) return;
+    e.preventDefault(); 
+    isJoystickActive = true;
+    onTouchMove(e);
+}
+
+function onTouchMove(e) {
+    if (!isJoystickActive || gameState !== 'PLAYING') return;
+    e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    const rect = joystickContainer.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let deltaX = touch.clientX - centerX;
+    let deltaY = touch.clientY - centerY;
+    
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    if (distance > JOYSTICK_MAX_TRAVEL) {
+        const angle = Math.atan2(deltaY, deltaX);
+        deltaX = Math.cos(angle) * JOYSTICK_MAX_TRAVEL;
+        deltaY = Math.sin(angle) * JOYSTICK_MAX_TRAVEL;
+    }
+
+    joystickHandle.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    
+    const normalizedX = deltaX / JOYSTICK_MAX_TRAVEL;
+    const normalizedY = deltaY / JOYSTICK_MAX_TRAVEL;
+
+    targetX = normalizedX * JOYSTICK_MOVEMENT_SCALE;
+    targetY = normalizedY * JOYSTICK_MOVEMENT_SCALE;
+}
+
+function onTouchEnd() {
+    if (!isJoystickActive) return;
+    isJoystickActive = false;
+    
+    joystickHandle.style.transform = 'translate(0, 0)';
+    
+    targetX = 0; 
+    targetY = 0;
+}
+
+function setupJoystick() {
+    joystickContainer = document.getElementById('joystick-container');
+    joystickHandle = document.getElementById('joystick-handle');
+
+    if (joystickContainer) {
+        joystickContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+        joystickContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+        joystickContainer.addEventListener('touchend', onTouchEnd, { passive: true });
+        joystickContainer.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    }
+}
+// --- END JOYSTICK INPUT HANDLERS ---
+
+
+// Handle mouse movement (Desktop controls)
+gameContainer.addEventListener('mousemove', handleCursorMove);
+
+// Keyboard controls
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'p' || e.key === 'P') {
+        if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+            togglePause();
         }
     }
+});
 
-    // --- GAME OBJECTS & LOGIC ---
-
-    function createTarget() {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const radius = Math.floor(mapRange(level, 1, 10, TARGET_RADIUS_MAX, TARGET_RADIUS_MIN));
-        const numSegments = Math.floor(mapRange(level, 1, 10, SEGMENTS_MIN, SEGMENTS_MAX));
-        const segmentAngle = (Math.PI * 2) / numSegments;
-        
-        let segments = [];
-        let totalSpeed = SEGMENT_SPEED_BASE + (level * 0.00005);
-
-        for (let i = 0; i < numSegments; i++) {
-            segments.push({
-                startAngle: i * segmentAngle,
-                endAngle: (i + 1) * segmentAngle,
-                targetStartAngle: i * segmentAngle,
-                targetEndAngle: (i + 1) * segmentAngle,
-                isDestroyed: false,
-                color: `hsl(${i * (360 / numSegments)}, 100%, 50%)`,
-                scale: 0.1 + (0.9 * Math.random()), // initial scale, between 10% and 100%
-                scaleSpeed: totalSpeed * (0.8 + 0.4 * Math.random()), // slightly varied speed
-                isComplete: false,
-                centerX: (Math.cos(i * segmentAngle + segmentAngle/2)),
-                centerY: (Math.sin(i * segmentAngle + segmentAngle/2)),
-            });
-        }
-
-        return { cx, cy, radius, numSegments, segmentAngle, segments, angle: 0, speed: totalSpeed, innerRadius: radius / 3 };
-    }
-
-    function createProjectile(x, y, vx, vy) {
-        return { 
-            x, 
-            y, 
-            vx, 
-            vy, 
-            radius: 4, 
-            color: '#FFD700', // Gold
-            life: 60, // frames
-            damage: 1
-        };
-    }
-
-    function updateProjectiles() {
-        projectiles = projectiles.filter(p => p.life > 0);
-        projectiles.forEach(p => {
-            p.x += p.vx * deltaTime;
-            p.y += p.vy * deltaTime;
-            p.life--;
-        });
-    }
-
-    function checkCollision() {
-        if (!target) return;
-
-        projectiles.forEach(p => {
-            if (p.life <= 0) return; // Already expired
-
-            target.segments.forEach(seg => {
-                if (seg.isDestroyed || seg.isComplete) return;
-
-                const centerAngle = (seg.startAngle + seg.endAngle) / 2;
-                const distance = dist(p.x, p.y, target.cx, target.cy);
-
-                // Check distance from center
-                if (distance > target.innerRadius && distance < target.radius) {
-                    
-                    // Check angle relative to target center
-                    let collisionAngle = Math.atan2(p.y - target.cy, p.x - target.cx);
-                    
-                    // Normalize collisionAngle to match segment angles (0 to 2*PI)
-                    collisionAngle -= target.angle; 
-                    collisionAngle = (collisionAngle + 2 * Math.PI) % (2 * Math.PI);
-
-                    if (collisionAngle >= seg.startAngle && collisionAngle <= seg.endAngle) {
-                        seg.isDestroyed = true;
-                        p.life = 0; // Destroy projectile
-                        score += 10;
-                        scoreDisplay.textContent = `SCORE: ${score}`;
-                        playTextToSpeech('Segment Destroyed', 'Fenrir');
-                    }
-                }
-            });
-        });
-    }
-
-    function updateTarget() {
-        if (!target) return;
-
-        target.segments.forEach(seg => {
-            if (!seg.isDestroyed && !seg.isComplete) {
-                // Advance the scale toward 1 (completion)
-                seg.scale = lerp(seg.scale, 1, seg.scaleSpeed * deltaTime);
-                
-                if (seg.scale > 0.995) {
-                    seg.scale = 1;
-                    seg.isComplete = true;
-                    // Check for Game Over immediately
-                    checkGameOver(); 
-                }
-            }
-        });
-        
-        // Rotate the entire target object
-        target.angle += target.speed * deltaTime;
-        target.angle %= (Math.PI * 2);
-    }
+function handleCursorMove(e) {
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
     
-    function checkGameOver() {
-        if (!target) return;
+    if (e.touches) return; 
 
-        const allDestroyed = target.segments.every(seg => seg.isDestroyed || seg.isComplete);
-        if (allDestroyed) {
-            // Check if game over condition (any segment completed) was met
-            const completedSegments = target.segments.filter(seg => seg.isComplete).length;
-            
-            if (completedSegments > 0) {
-                endGame();
-            } else {
-                // All segments destroyed before completion - level up!
-                levelUp();
-            }
-        }
-    }
+    if (isGyroActive && gyroBaseX !== 0) return;
     
-    function levelUp() {
-        level++;
-        showMessage(`LEVEL ${level} // TARGET ACQUIRED`, 2000, '#00FFFF');
-        playTextToSpeech(`Level ${level} achieved. New target initializing.`, 'Orus');
-        target = createTarget();
-    }
+    if (e.cancelable) e.preventDefault();
     
-    function drawShip() {
-        ctx.beginPath();
-        // Draw the central circle (reticle)
-        ctx.arc(ship.x, ship.y, ship.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = ship.color;
-        ctx.lineWidth = 2;
-        ctx.shadowColor = ship.color;
-        ctx.shadowBlur = 15;
-        ctx.stroke();
-        ctx.shadowBlur = 0; // Reset shadow for other drawings
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
-        // Draw crosshairs
-        ctx.strokeStyle = ship.color;
-        ctx.lineWidth = 1;
-        const size = ship.radius + 5;
-        
-        // Horizontal line
-        ctx.beginPath();
-        ctx.moveTo(ship.x - size, ship.y);
-        ctx.lineTo(ship.x - ship.radius/3, ship.y);
-        ctx.moveTo(ship.x + ship.radius/3, ship.y);
-        ctx.lineTo(ship.x + size, ship.y);
-        ctx.stroke();
+    const screenCenterOffsetX = clientX - WIDTH / 2;
+    const screenCenterOffsetY = clientY - HEIGHT / 2;
 
-        // Vertical line
-        ctx.beginPath();
-        ctx.moveTo(ship.x, ship.y - size);
-        ctx.lineTo(ship.x, ship.y - ship.radius/3);
-        ctx.moveTo(ship.x, ship.y + ship.radius/3);
-        ctx.lineTo(ship.x, ship.y + size);
-        ctx.stroke();
-    }
+    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
+    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
+}
 
-    function drawProjectiles() {
-        projectiles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
+let lastTime = 0;
 
-    function drawTarget() {
-        if (!target) return;
-        
-        const cx = target.cx;
-        const cy = target.cy;
-        const R = target.radius;
-        const r = target.innerRadius;
-        const angle = target.angle;
-
-        // Draw static inner core
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#0F0F0F'; // Dark gray core
-        ctx.fill();
-        ctx.strokeStyle = '#00FF7F'; // Spring Green outline
-        ctx.lineWidth = 1;
-        ctx.shadowColor = '#00FF7F';
-        ctx.shadowBlur = 5;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Draw segments
-        target.segments.forEach(seg => {
-            if (seg.isComplete) {
-                // Draw a complete segment as a solid block (Game Over condition)
-                ctx.beginPath();
-                ctx.arc(cx, cy, R, seg.startAngle + angle, seg.endAngle + angle);
-                ctx.lineTo(cx, cy);
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(255, 69, 0, 0.5)'; // Red-Orange transparent fill
-                ctx.fill();
-                ctx.strokeStyle = '#FF4500';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                
-            } else if (!seg.isDestroyed) {
-                // Interpolate segment angle (for smooth rotation effect)
-                seg.startAngle = lerp(seg.startAngle, seg.targetStartAngle, SEGMENT_LERP_SPEED * deltaTime);
-                seg.endAngle = lerp(seg.endAngle, seg.targetEndAngle, SEGMENT_LERP_SPEED * deltaTime);
-
-                // Calculate the outer arc radius based on scale
-                const currentR = r + (R - r) * seg.scale;
-
-                // Draw the segment
-                ctx.beginPath();
-                ctx.arc(cx, cy, currentR, seg.startAngle + angle, seg.endAngle + angle);
-                ctx.arc(cx, cy, r, seg.endAngle + angle, seg.startAngle + angle, true);
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(0, 255, 127, 0.05)'; // Very subtle fill
-                ctx.fill();
-                ctx.strokeStyle = seg.color;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-        });
-    }
-
-    function drawConsole() {
-        if (!target) return;
-        
-        const cx = target.cx;
-        const cy = target.cy;
-        const innerRadius = target.innerRadius;
-        const outerRadius = Math.max(canvas.width, canvas.height) * 0.7; // Outer bound for console lines
-        
-        // Line width ADJUSTED for better visibility on mobile
-        ctx.lineWidth = 2.5; 
-        ctx.strokeStyle = '#00FF7F'; // Spring Green
-        // Shadow blur ADJUSTED for better visibility
-        ctx.shadowColor = '#00FF7F';
-        ctx.shadowBlur = 12;
-
-        target.segments.forEach(seg => {
-            if (seg.isDestroyed || seg.isComplete) return;
-
-            // Use the lerped angles
-            const angle1 = seg.startAngle + target.angle;
-            const angle2 = seg.endAngle + target.angle;
-            
-            // Outer point of segment
-            const P1_O = { x: cx + Math.cos(angle1) * outerRadius, y: cy + Math.sin(angle1) * outerRadius };
-            const P2_O = { x: cx + Math.cos(angle2) * outerRadius, y: cy + Math.sin(angle2) * outerRadius };
-
-            // Inner point of segment (on the inner radius of the target)
-            const P1_I = { x: cx + Math.cos(angle1) * innerRadius, y: cy + Math.sin(angle1) * innerRadius };
-            const P2_I = { x: cx + Math.cos(angle2) * innerRadius, y: cy + Math.sin(angle2) * innerRadius };
-
-            // Draw the radial lines
-            ctx.beginPath();
-            ctx.moveTo(P1_I.x, P1_I.y);
-            ctx.lineTo(P1_O.x, P1_O.y);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(P2_I.x, P2_I.y);
-            ctx.lineTo(P2_O.x, P2_O.y);
-            ctx.stroke();
-            
-            // Draw the scale indicator line inside the segment (subtle progress bar)
-            const midAngle = (angle1 + angle2) / 2;
-            const scaleLength = target.radius - innerRadius;
-            const currentScalePoint = innerRadius + scaleLength * seg.scale;
-            
-            ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(midAngle) * innerRadius, cy + Math.sin(midAngle) * innerRadius);
-            ctx.lineTo(cx + Math.cos(midAngle) * currentScalePoint, cy + Math.sin(midAngle) * currentScalePoint);
-            ctx.strokeStyle = seg.color; // Use segment color for progress line
-            ctx.stroke();
-            
-        });
-        
-        // Draw the three-point targeting indicator around the ship 
-        ctx.strokeStyle = '#00FFFF'; // Cyan
-        ctx.shadowColor = '#00FFFF';
-        
-        target.segments.forEach(seg => {
-            if (seg.isDestroyed || seg.isComplete) return;
-
-            const r1 = target.innerRadius;
-            const r2 = target.radius;
-            const scale1 = seg.scale;
-            const scale2 = seg.scale * 0.9; // Slight variance
-            
-            // Use the lerped angles
-            const angle1 = seg.startAngle + target.angle;
-            const angle2 = seg.endAngle + target.angle;
-            const midAngle = (angle1 + angle2) / 2;
-            
-            // Use current segment scale to determine where the point is drawn
-            const innerRadius1 = r1 + (r2 - r1) * scale1;
-            const innerRadius2 = r1 + (r2 - r1) * scale2;
-            
-            // P3_I (Center-ish point)
-            const P3_I = { 
-                x: cx + Math.cos(midAngle) * innerRadius2, 
-                y: cy + Math.sin(midAngle) * innerRadius2 
-            };
-            
-            // P1_I and P2_I (Corner points)
-            const P1_I = { 
-                x: cx + Math.cos(angle1) * innerRadius1, 
-                y: cy + Math.sin(angle1) * innerRadius1 
-            };
-            
-            const P2_I = { 
-                x: cx + Math.cos(angle2) * innerRadius1, 
-                y: cy + Math.sin(angle2) * innerRadius1 
-            };
-
-            ctx.beginPath();
-            ctx.moveTo(P3_I.x, P3_I.y);
-            ctx.lineTo(P2_I.x, P2_I.y);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(P3_I.x, P3_I.y);
-            ctx.lineTo(P1_I.x, P1_I.y);
-            ctx.stroke();
-        });
-        ctx.shadowBlur = 0;
-    }
-
-
-    // --- GAME FLOW & EVENTS ---
-
-    function initGame() {
-        // Set canvas size
-        canvas.width = gameContainer.clientWidth;
-        canvas.height = gameContainer.clientHeight;
-        
-        // Initial state
-        level = 1;
-        score = 0;
-        gameOver = false;
-        projectiles = [];
-        scoreDisplay.textContent = `SCORE: ${score}`;
-        ship.x = canvas.width / 2;
-        ship.y = canvas.height / 2;
-        shipTargetX = ship.x;
-        shipTargetY = ship.y;
-        target = createTarget();
-
-        // Detect mobile based on screen size or touch events
-        isMobile = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
-        
-        // Initialize audio context
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    
-    function startGame() {
-        initGame(); 
-        
-        requestGyroPermission();
-        
-        document.getElementById('startScreen').classList.add('hidden');
-        document.getElementById('ui-layer').classList.remove('hidden');
-        gameContainer.style.cursor = 'none';
-        
-        // Resume audio context if suspended (needed for first interaction on some browsers)
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        isPlaying = true;
-        lastTime = performance.now();
-        gameLoop(lastTime);
-        
-        playTextToSpeech('Target lock initiated. Protect the core.', 'Kore');
-    }
-    
-    function endGame() {
-        isPlaying = false;
-        gameOver = true;
-        document.getElementById('gameOverScreen').classList.remove('hidden');
-        finalScoreSpan.textContent = score;
-        
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('voidBestScore', bestScore);
-            bestScoreText.textContent = `NEW BEST SCORE: ${bestScore}`;
-            playTextToSpeech('Critical failure. New high score recorded.', 'Charon');
-        } else {
-            bestScoreText.textContent = `Best Score: ${bestScore}`;
-            playTextToSpeech('Critical failure. Systems offline.', 'Charon');
-        }
-        
-        gameContainer.style.cursor = 'default';
-    }
-
-    // --- INPUT HANDLERS ---
-    
-    function fireProjectile(x, y) {
-        if (!isPlaying) return;
-
-        const angle = Math.atan2(y - ship.y, x - ship.x);
-        const speed = 15;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        
-        projectiles.push(createProjectile(ship.x, ship.y, vx, vy));
-        // Add a simple fire sound here if using Tone.js, otherwise a console message
-        // console.log("Fire!");
-    }
-
-    function onMouseMove(event) {
-        if (isMobile) return;
-        shipTargetX = event.clientX;
-        shipTargetY = event.clientY;
-    }
-
-    function onMouseClick(event) {
-        if (isMobile || !isPlaying) return;
-        fireProjectile(event.clientX, event.clientY);
-    }
-    
-    function onTouchMove(event) {
-        if (!isPlaying || event.touches.length === 0) return;
-        // In mobile mode, we ignore touchmove for ship control, relying on gyro
-        // This prevents conflicting input.
-        event.preventDefault();
-    }
-    
-    function onTouchStart(event) {
-        if (!isPlaying || !isMobile) return;
-        event.preventDefault();
-        
-        // Fire logic: tap the screen to fire toward the touch point (first touch only)
-        const touch = event.touches[0];
-        fireProjectile(touch.clientX, touch.clientY);
-    }
-
-    function onDeviceOrientation(event) {
-        if (!isMobile || !isPlaying || event.alpha === null) return;
-        
-        gyroAlpha = event.alpha;
-        gyroBeta = event.beta; // Tilt front/back
-        gyroGamma = event.gamma; // Tilt left/right
-    }
-
-    function requestGyroPermission() {
-        if (isMobile && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission()
-                .then(permissionState => {
-                    if (permissionState === 'granted') {
-                        window.addEventListener('deviceorientation', onDeviceOrientation);
-                        showMessage('Gyro controls active.', 1500, '#00FFFF');
-                    } else {
-                        showMessage('Gyro permission denied. Tap to fire.', 3000, '#FF4500');
-                    }
-                })
-                .catch(error => {
-                    console.error("Device orientation request failed:", error);
-                    showMessage('Could not activate motion controls.', 3000, '#FF4500');
-                    window.addEventListener('deviceorientation', onDeviceOrientation); // Fallback
-                });
-        } else if (isMobile) {
-            // Non-iOS devices where requestPermission is not needed
-            window.addEventListener('deviceorientation', onDeviceOrientation);
-            showMessage('Motion controls enabled.', 1500, '#00FFFF');
-        }
-    }
-
-
-    // --- MAIN GAME LOOP ---
-
-    function update(time) {
-        deltaTime = (time - lastTime) / 1000; // Time in seconds
-        lastTime = time;
-
-        if (isMobile) {
-            // Apply reduced sensitivity for mobile controls
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            // Define the max movement range from center based on sensitivity factor
-            const maxMovementRangeX = canvas.width * GYRO_SENSITIVITY;
-            const maxMovementRangeY = canvas.height * GYRO_SENSITIVITY;
-            
-            const tiltRange = GYRO_TILT_RANGE;
-
-            // Clamp gyro values to the effective tilt range
-            const effectiveGamma = Math.min(Math.max(gyroGamma, -tiltRange), tiltRange);
-            const effectiveBeta = Math.min(Math.max(gyroBeta, -tiltRange), tiltRange);
-            
-            // Map clamped tilt to movement delta, and add to center
-            // gamma (left/right tilt) controls X movement
-            const mappedX = centerX + (effectiveGamma / tiltRange) * maxMovementRangeX;
-            // beta (front/back tilt) controls Y movement (inverted for natural feel)
-            const mappedY = centerY + (effectiveBeta / tiltRange) * maxMovementRangeY * -1; // -1 for intuitive Y axis
-
-            shipTargetX = mappedX;
-            shipTargetY = mappedY;
-        }
-
-        // Smooth ship movement towards target (desktop or mobile)
-        ship.x = lerp(ship.x, shipTargetX, 0.15); 
-        ship.y = lerp(ship.y, shipTargetY, 0.15);
-
-        // Game logic updates
-        updateTarget();
-        updateProjectiles();
-        checkCollision();
-        checkGameOver(); // Redundant check, but good for safety
-    }
-
-    function draw() {
-        // Clear canvas
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw all game elements
-        drawConsole();
-        drawTarget();
-        drawProjectiles();
-        drawShip();
-    }
-
-    function gameLoop(time) {
-        if (!isPlaying) return;
-
-        update(time);
-        draw();
-
+function gameLoop(timestamp) {
+    if (gameState === 'START' || gameState === 'PAUSED' || gameState === 'TUTORIAL') {
+        render(); // Always render for visual feedback
         requestAnimationFrame(gameLoop);
-    }
-    
-    // --- EVENT LISTENERS ---
-    
-    window.addEventListener('resize', () => {
-        canvas.width = gameContainer.clientWidth;
-        canvas.height = gameContainer.clientHeight;
-        // Recalculate center for target
-        if (target) {
-            target.cx = canvas.width / 2;
-            target.cy = canvas.height / 2;
-        }
-        // Recalculate shipTarget if desktop
-        if (!isMobile) {
-            shipTargetX = ship.x; // Keep in place
-            shipTargetY = ship.y;
-        } else {
-             // Re-center ship on resize for mobile
-            ship.x = canvas.width / 2;
-            ship.y = canvas.height / 2;
-        }
-    });
-    
-    document.getElementById('startButton').addEventListener('click', startGame);
-    document.getElementById('restartButton').addEventListener('click', startGame);
-
-    gameContainer.addEventListener('mousemove', onMouseMove);
-    gameContainer.addEventListener('click', onMouseClick);
-    
-    // Mobile touch events
-    gameContainer.addEventListener('touchstart', onTouchStart, { passive: false });
-    gameContainer.addEventListener('touchmove', onTouchMove, { passive: false });
-
-
-    // Initial setup on load
-    window.onload = function() {
-        initGame();
-        // Check initial best score
-        if (document.getElementById('bestScoreText')) {
-            document.getElementById('bestScoreText').textContent = `Best Score: ${bestScore}`;
-        }
+        return;
     }
 
+    const dt = (timestamp - lastTime) / 16.66;
+    lastTime = timestamp;
+
+    if (gameState === 'PLAYING') {
+        update(dt);
+    }
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt;
+    playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt;
+
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+
+    const cameraMultiplier = isGyroActive ? -0.4 : -0.25;
+    const targetCameraX = playerX * cameraMultiplier;
+    const targetCameraY = playerY * cameraMultiplier;
+    cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
+    cameraOffsetY += (targetCameraY - cameraOffsetY) * 0.08 * dt;
+
+    speed += 0.005 * dt;
+    score += Math.floor(speed * dt);
+
+    updateParticles(dt);
+
+    const moveZ = speed * dt;
+    
+    for (let i = 0; i < path.length; i++) {
+        path[i].z -= moveZ;
+    }
+
+    // Tunnel shape variation
+    if (score / 100 > nextShapeChange) {
+        const shapes = [4, 6, 8];
+        currentTunnelShape = shapes[Math.floor(Math.random() * shapes.length)];
+        nextShapeChange += 500;
+    }
+
+    while (path.length > 0 && path[0].z < -ANCHOR_SPACING) {
+        const removedZ = path[0].z;
+        path.shift();
+        segmentColors.delete(removedZ);
+    }
+    
+    if (path.length > 0) {
+        let closestSegment = null;
+        for (const segment of path) {
+            if (!segment.isAnchor && segment.z > 0) {
+                closestSegment = segment;
+                break;
+            }
+        }
+        
+        if (closestSegment) {
+            checkCollision(closestSegment);
+        }
+    }
+
+    const maxZNeeded = 5 * ANCHOR_SPACING;
+    const farthestZ = path.length > 0 ? path[path.length - 1].z : 0;
+    
+    if (farthestZ < maxZNeeded) {
+        generateNextPathPoint();
+        
+        const anchors = path.filter(p => p.isAnchor).sort((a, b) => a.z - b.z);
+        const p1 = anchors[anchors.length - 2];
+        const p2 = anchors[anchors.length - 1];
+        
+        if (p1 && p2) {
+            let currentInterpolationZ = p1.z;
+            while (currentInterpolationZ < p2.z - SEGMENT_DEPTH) {
+                currentInterpolationZ += SEGMENT_DEPTH;
+
+                const t = ((currentInterpolationZ - p1.z) / (p2.z - p1.z)); 
+                
+                const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+                const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+                const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+                
+                path.push({
+                    z: currentInterpolationZ,
+                    centerX: x,
+                    centerY: y,
+                    rotation: r,
+                    isAnchor: false
+                });
+            }
+            path.sort((a, b) => a.z - b.z);
+        }
+    }
+
+    document.getElementById('scoreDisplay').innerText = Math.floor(score / 100);
+    let mach = (speed / BASE_SPEED).toFixed(1);
+    document.getElementById('speedDisplay').innerText = `MACH ${mach}`;
+}
+
+function checkCollision(segment) {
+    const dx = playerX - segment.centerX;
+    const dy = playerY - segment.centerY;
+
+    const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+
+    const innerRadius = TUNNEL_RADIUS * WALL_THICKNESS;
+
+    if (distanceToCenter > innerRadius) {
+        crash();
+    }
+}
+
+function crash() {
+    gameState = 'GAMEOVER';
+    speed = 0;
+    playSound('crash');
+    
+    if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+    }
+    
+    canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+    setTimeout(() => canvas.style.transform = 'none', 50);
+    
+    const finalScoreValue = Math.floor(score / 100);
+
+    if (finalScoreValue > highScore) {
+        highScore = finalScoreValue;
+        saveHighScore();
+        document.getElementById('finalScore').innerHTML = `NEW RECORD: <span style="color: #00ffff; font-weight:bold;">${finalScoreValue}</span>m`;
+    } else {
+        document.getElementById('finalScore').innerHTML = `You reached <span style="color:white; font-weight:bold;">${finalScoreValue}</span>m`;
+    }
+
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    gameContainer.style.cursor = 'auto';
+}
+
+function render() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.save();
+    ctx.translate(cameraOffsetX, cameraOffsetY);
+
+    drawParticles();
+
+    const cx = WIDTH / 2;
+    const cy = HEIGHT / 2;
+    
+    const pathLen = path.length;
+    
+    for (let i = pathLen - 2; i >= 0; i--) {
+        const seg1 = path[i];
+        const seg2 = path[i + 1];
+        
+        if (seg1.z < 1 || seg2.z < 1) continue; 
+
+        drawTunnelSegment(cx, cy, seg1, seg2);
+    }
+    
+    // Draw ship - simple triangle
+    ctx.save();
+    ctx.translate(cx + playerX, cy + playerY);
+    
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
+    ctx.fillStyle = '#fff';
+    
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(10, 10);
+    ctx.lineTo(-10, 10);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Second glow layer
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = `hsla(${hue + 180}, 100%, 60%, 0.5)`;
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    
+    ctx.restore();
+}
+
+function drawTunnelSegment(cx, cy, seg1, seg2) {
+    const scale1 = FOV / seg1.z;
+    const scale2 = FOV / seg2.z;
+
+    const outerRadius1 = TUNNEL_RADIUS * scale1;
+    const innerRadius1 = outerRadius1 * WALL_THICKNESS;
+    
+    const outerRadius2 = TUNNEL_RADIUS * scale2;
+    const innerRadius2 = outerRadius2 * WALL_THICKNESS;
+
+    let segmentHue = hue;
+    const anchors = Array.from(segmentColors.keys()).sort((a, b) => a - b);
+    
+    for (let i = anchors.length - 1; i >= 0; i--) {
+        if (seg2.z >= anchors[i]) {
+            segmentHue = segmentColors.get(anchors[i]);
+            break;
+        }
+    }
+    
+    // --- Thematic Styling Logic ---
+    let lineWidth, blurAmount, colorSaturation, colorLightness;
+
+    if (currentTheme === 'neon') {
+        lineWidth = 2 + scale2 * 1.0;
+        blurAmount = Math.max(0, 15 * scale2);
+        colorSaturation = '100%';
+        colorLightness = '70%';
+        ctx.globalAlpha = 1.0;
+    } else if (currentTheme === 'retro') {
+        lineWidth = 4 + scale2 * 0.5; 
+        blurAmount = 0; // Retro is now defined as no glow
+        colorSaturation = '80%';
+        colorLightness = '60%';
+        ctx.globalAlpha = 0.9;
+    } else if (currentTheme === 'pastel') {
+        lineWidth = 1 + scale2 * 0.5;
+        blurAmount = Math.max(0, 5 * scale2);
+        colorSaturation = '80%';
+        colorLightness = '85%'; 
+        ctx.globalAlpha = 0.9;
+    }
+
+    ctx.strokeStyle = `hsl(${segmentHue}, ${colorSaturation}, ${colorLightness})`;
+    ctx.shadowBlur = blurAmount;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.lineWidth = lineWidth;
+    // --- End Thematic Styling Logic ---
+
+    const sides = currentTunnelShape;
+    const angleStep = (Math.PI * 2) / sides;
+    
+    for (let j = 0; j < sides; j++) {
+        const angle1_a = j * angleStep + seg1.rotation;
+        const angle1_b = (j + 1) * angleStep + seg1.rotation;
+        const angle2_a = j * angleStep + seg2.rotation;
+
+        const cos2a = Math.cos(angle2_a);
+        const sin2a = Math.sin(angle2_a);
+        const cos1a = Math.cos(angle1_a);
+        const sin1a = Math.sin(angle1_a);
+        const cos1b = Math.cos(angle1_b);
+        const sin1b = Math.sin(angle1_b);
+
+        const centerX2Scaled = seg2.centerX * scale2;
+        const centerY2Scaled = seg2.centerY * scale2;
+        const centerX1Scaled = seg1.centerX * scale1;
+        const centerY1Scaled = seg1.centerY * scale1;
+
+        const P3_I = { 
+            x: cx + centerX2Scaled + cos2a * innerRadius2, 
+            y: cy + centerY2Scaled + sin2a * innerRadius2 
+        };
+        
+        const P1_I = { 
+            x: cx + centerX1Scaled + cos1a * innerRadius1, 
+            y: cy + centerY1Scaled + sin1a * innerRadius1 
+        };
+        
+        const P2_I = { 
+            x: cx + centerX1Scaled + cos1b * innerRadius1, 
+            y: cy + centerY1Scaled + sin1b * innerRadius1 
+        };
+
+        // Draw the inner wall segment lines (Quads are drawn as two triangles)
+        // Draw segment P3_I to P2_I 
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P2_I.x, P2_I.y);
+        ctx.stroke();
+        
+        // Draw segment P3_I to P1_I
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P1_I.x, P1_I.y);
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0; // Reset global alpha
+}
+
+function startGame() {
+    initGame(); 
+    
+    requestGyroPermission();
+    
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.remove('hidden');
+    gameContainer.style.cursor = 'none';
+    
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // If not showing tutorial, start the timer immediately
+    if (gameState === 'PLAYING') {
+        lastTime = performance.now();
+    }
+}
+
+window.onload = function () {
+    resize();
+    setupJoystick(); 
+    loadHighScore(); 
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,WIDTH, HEIGHT);
+    requestAnimationFrame(gameLoop); 
+}
 </script>
 </body>
 </html>
