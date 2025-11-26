@@ -774,6 +774,146 @@
             background-clip: text;
             filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.8));
         }
+            /* -------------------------------------------------------
+       UNIVERSAL FIXES — MOBILE + TABLET + DESKTOP RESPONSIVE
+    ------------------------------------------------------- */
+    
+        /* Ensure all modals & screens scroll on small devices */
+        .themes-modal,
+        .ships-modal,
+        .screen {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Prevent content from touching screen edges */
+        .themes-modal,
+        .ships-modal {
+            padding-bottom: 80px;
+        }
+        
+        /* -------------------------------------
+           UI SCALING SYSTEM (dynamic resizing)
+        -------------------------------------- */
+        
+        :root {
+            --ui-scale: 1;
+        }
+        
+        /* Small phones (iPhone SE, older Android) */
+        @media (max-width: 480px) {
+            :root { --ui-scale: 0.75; }
+        }
+        
+        /* Normal phones (most modern devices) */
+        @media (min-width: 481px) and (max-width: 900px) {
+            :root { --ui-scale: 0.9; }
+        }
+        
+        /* Tablets (iPad Mini, Air, Pro) */
+        @media (min-width: 901px) {
+            :root { --ui-scale: 1.15; }
+        }
+        
+        /* Apply UI scaling to all major elements */
+        .btn,
+        .theme-card,
+        .ship-card,
+        .screen h1,
+        .screen p,
+        .equip-btn,
+        .unlock-btn,
+        #startScreen button {
+            transform: scale(var(--ui-scale));
+            transform-origin: center top;
+        }
+        
+        /* -------------------------------------
+           RESPONSIVE GRID (Themes, Ships)
+        -------------------------------------- */
+        
+        .themes-grid,
+        .ships-grid {
+            display: grid;
+            width: 100%;
+            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
+        
+        /* Small phones */
+        @media (max-width: 480px) {
+            .themes-grid,
+            .ships-grid {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 12px;
+            }
+            .theme-card, .ship-card {
+                padding: 10px;
+            }
+            .theme-preview, .ship-preview {
+                height: 65px !important;
+            }
+        }
+        
+        /* Tablets */
+        @media (min-width: 901px) {
+            .themes-grid,
+            .ships-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 24px;
+            }
+            .theme-card, .ship-card {
+                padding: 22px;
+            }
+            .theme-preview, .ship-preview {
+                height: 120px !important;
+            }
+        }
+        
+        /* -------------------------------------
+           MODAL RESPONSIVENESS
+        -------------------------------------- */
+        
+        @media (max-width: 600px) {
+            .themes-modal,
+            .ships-modal {
+                padding: 12px;
+                justify-content: flex-start !important;
+                align-items: center !important;
+            }
+        
+            .theme-card,
+            .ship-card {
+                width: 100%;
+                max-width: 240px;
+                margin: 0 auto;
+            }
+        }
+        
+        /* -------------------------------------
+           START SCREEN RESPONSIVE TEXT/BUTTONS
+        -------------------------------------- */
+        
+        @media (max-width: 480px) {
+            #startScreen h1 {
+                font-size: 40px !important;
+            }
+            #startScreen .btn {
+                font-size: 16px !important;
+                padding: 12px 26px !important;
+            }
+        }
+        
+        @media (min-width: 901px) {
+            #startScreen h1 {
+                font-size: 80px !important;
+            }
+            #startScreen .btn {
+                font-size: 26px !important;
+                padding: 20px 70px !important;
+            }
+        }
+
     </style>
 </head>
 <body>
