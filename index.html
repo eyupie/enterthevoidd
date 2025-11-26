@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TJL2LTC5MD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TJL2LTC5MD');
+    </script>
+    <link rel="manifest" href="/manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOID</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            touch-action: none; /* Prevent browser zooming/scrolling */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+            user-select: none;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .hud-left {
+            display: flex;
+            gap: 40px; 
+        }
+
+        .score-container {
+            text-align: left;
+        }
+
+        .high-score-hud {
+            text-align: left;
+            opacity: 0.8;
+            display: none; 
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+
+        .score-val {
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .score-val.small {
+            font-size: 28px;
+            color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
+        }
+
+        .speed-meter {
+            text-align: right;
+        }
+
+        .speed-val {
+            font-size: 24px;
+            color: #00ffff;
+        }
+
+        .pause-btn {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #fff;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+
+        .pause-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .pause-icon {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pause-icon span {
+            width: 3px;
+            height: 16px;
+            background: #fff;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 12px solid #fff;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            margin-left: 3px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            transition: opacity 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        #tutorialScreen {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        #tutorialScreen .btn {
+            margin-top: 30px;
+            font-size: 20px;
+            padding: 15px 40px;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 64px;
+            margin: 0;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, #ff0055, #00ffff, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.8)); }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 36px;
+                letter-spacing: 2px;
+            }
+            
+            .game-over-title {
+                font-size: 18px !important;
+                letter-spacing: 0.5px !important;
+                line-height: 1.2;
+                text-align: center;
+                padding: 0 15px;
+                white-space: nowrap;
+            }
+            .hud-left {
+                gap: 15px;
+            }
+            .score-val {
+                font-size: 36px;
+            }
+            .score-val.small {
+                font-size: 20px;
+            }
+            
+            /* Mobile button adjustments */
+            .btn {
+                padding: 15px 40px;
+                font-size: 18px;
+            }
+        }
+
+        p {
+            color: #ccc;
+            font-size: 18px;
+            margin-top: 10px;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .btn {
+            margin-top: 40px;
+            padding: 20px 60px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 3px solid #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .key {
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #aaa;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .theme-btn {
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #666;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-btn.active {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .theme-btn.locked {
+            border-color: #667eea;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .theme-btn.locked:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: scale(1.05);
+        }
+
+        .theme-btn .star-icon {
+            font-size: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .themes-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+        }
+
+        .themes-modal h2 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            background: linear-gradient(90deg, #ff0055, #00ffff, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .theme-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #666;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+        }
+
+        .theme-card:hover {
+            transform: scale(1.05);
+            border-color: #fff;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-card.locked {
+            border-color: #667eea;
+            opacity: 0.85;
+        }
+
+        .theme-card.locked:hover {
+            border-color: #764ba2;
+        }
+
+        .theme-card.selected {
+            border-color: #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .unlock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            gap: 10px;
+        }
+
+        .theme-card.locked .unlock-overlay {
+            display: flex;
+        }
+
+        .unlock-btn {
+            padding: 10px 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid #fff;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 700;
+            border-radius: 5px;
+        }
+
+        .unlock-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+        }
+
+        .equip-btn {
+            padding: 10px 25px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 700;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .equip-btn:hover {
+            background: #00ffff;
+            color: #000;
+        }
+
+        .equipped-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #00ffff;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .theme-preview {
+            width: 100%;
+            height: 100px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-preview-neon {
+            background: linear-gradient(135deg, #ff0055, #00ffff, #00ff00);
+        }
+
+        .theme-preview-retro {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcf7f);
+        }
+
+        .theme-preview-pastel {
+            background: linear-gradient(135deg, #ffd1dc, #b4e4ff, #d4f1f4);
+        }
+
+        .theme-preview-midnight {
+            background: linear-gradient(135deg, #1a1a40, #4a4ae0, #8080ff);
+        }
+
+        .theme-preview-ember {
+            background: linear-gradient(135deg, #ff0000, #ff6600, #ff9900);
+        }
+
+        .theme-preview-matrix {
+            background: linear-gradient(135deg, #001100, #00ff00, #003300);
+        }
+
+        .theme-preview-synthwave {
+            background: linear-gradient(135deg, #ff00ff, #ff0080, #00ffff);
+        }
+
+        .theme-preview-void {
+            background: linear-gradient(135deg, #000000, #333333, #666666);
+        }
+
+        .theme-card h3 {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        .theme-card p {
+            font-size: 14px;
+            color: #aaa;
+            margin: 5px 0;
+        }
+
+        .theme-price {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 16px;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .back-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #fff;
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .ship-preview {
+            width: 100%;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ship-preview canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ship-stats {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .coin-counter {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 2px solid #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .coin-counter .star-icon {
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.8));
+        }
+
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .coin-animation {
+            position: fixed;
+            font-size: 48px;
+            z-index: 999;
+            pointer-events: none;
+            animation: coinFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes coinFloat {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 0;
+            }
+            30% {
+                transform: translateY(-30px) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .coin-earned-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 998;
+            pointer-events: none;
+            display: none;
+        }
+
+        .coin-earned-display.show {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: coinEarnedPop 2s ease-out forwards;
+        }
+
+        @keyframes coinEarnedPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            15% {
+                transform: translate(-50%, -50%) scale(1.3);
+                opacity: 1;
+            }
+            30% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -80%) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        .coin-icon-big {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: coinSpin 1.5s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.8));
+        }
+
+        .coin-icon-big::before {
+            content: '★';
+            font-size: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.8));
+        }
+
+        @keyframes coinSpin {
+            0%, 100% {
+                transform: rotateY(0deg) scale(1);
+            }
+            50% {
+                transform: rotateY(180deg) scale(1.1);
+            }
+        }
+
+        .coin-counter-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.6));
+            margin-top: 15px;
+            animation: numberCount 1.5s ease-out;
+        }
+
+        @keyframes numberCount {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .flying-coin {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 1001;
+            pointer-events: none;
+        }
+
+        .flying-coin::before {
+            content: '★';
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.8));
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer" class="ui-layer hidden">
+        <div class="hud-top">
+            <div class="hud-left">
+                <div class="score-container high-score-hud" style="display: none;">
+                    <div class="score-label">HIGH SCORE</div>
+                    <div class="score-val small" id="highScoreDisplayUI">0</div>
+                </div>
+
+                <div class="score-container">
+                    <div class="score-label">DISTANCE</div>
+                    <div class="score-val" id="scoreDisplay">0</div>
+                </div>
+            </div>
+
+            <div class="speed-meter">
+                <div class="score-label">VELOCITY</div>
+                <div class="speed-val" id="speedDisplay">MACH 1</div>
+            </div>
+        </div>
+        <button class="pause-btn" id="pauseBtn" onclick="togglePause()">
+            <div class="pause-icon" id="pauseIcon">
+                <span></span>
+                <span></span>
+            </div>
+        </button>
+    </div>
+
+    <div id="startScreen" class="screen">
+        <h1>VOID</h1>
+        <p>Enter the void. Get lost.</p>
+        
+        <div class="coin-counter" style="position: relative; top: 0; right: 0; margin: 20px auto;">
+            <span class="star-icon">★</span>
+            <span class="coin-display">0</span>
+        </div>
+        
+        <div class="score-container" style="text-align: center; margin-bottom: 20px;">
+            <div class="score-label">ALL-TIME HIGH</div>
+            <div class="score-val" id="highScoreDisplayStart" style="font-size: 32px; color: #ff5500; text-shadow: 0 0 15px rgba(255, 85, 0, 0.7);">0</div>
+        </div>
+        
+        <div id="missionDisplay" style="text-align: center; margin-bottom: 20px; border: 1px solid #666; padding: 10px 20px; border-radius: 8px; background: rgba(0,0,0,0.5); max-width: 300px;">
+            <!-- Mission info injected here -->
+        </div>
+
+        <button class="btn" onclick="openThemesModal()" style="margin-top: 10px; padding: 15px 40px; font-size: 20px;">THEMES</button>
+        <button class="btn" onclick="openShipsModal()" style="margin-top: 10px; padding: 15px 40px; font-size: 20px;">SHIPS</button>
+        
+        <div class="controls-hint">
+            <span><span class="key">TILT / TOUCH</span> STEER SHIP</span>
+        </div>
+
+        <button class="btn" onclick="showTutorial()">ENTER THE VOID</button>
+    </div>
+
+    <div id="themesModal" class="themes-modal hidden">
+        <h2>SELECT THEME</h2>
+        <div class="themes-grid">
+            <div class="theme-card" data-theme="neon">
+                <div class="theme-preview theme-preview-neon"></div>
+                <h3>NEON</h3>
+                <p>Classic vibrant glow</p>
+                <button class="equip-btn" onclick="equipTheme('neon')">EQUIP</button>
+            </div>
+            
+            <div class="theme-card" data-theme="retro">
+                <div class="theme-preview theme-preview-retro"></div>
+                <h3>RETRO</h3>
+                <p>Old school arcade</p>
+                <button class="equip-btn" onclick="equipTheme('retro')">EQUIP</button>
+            </div>
+            
+            <div class="theme-card" data-theme="pastel">
+                <div class="theme-preview theme-preview-pastel"></div>
+                <h3>PASTEL</h3>
+                <p>Soft dreamy colors</p>
+                <button class="equip-btn" onclick="equipTheme('pastel')">EQUIP</button>
+            </div>
+            
+            <div class="theme-card locked" data-theme="midnight">
+                <div class="theme-preview theme-preview-midnight"></div>
+                <h3>MIDNIGHT</h3>
+                <p>Deep space blues</p>
+                <div class="theme-price"><span>★</span> 500</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 500</div>
+                    <button class="unlock-btn" onclick="unlockTheme('midnight')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-theme="ember">
+                <div class="theme-preview theme-preview-ember"></div>
+                <h3>EMBER</h3>
+                <p>Burning crimson fire</p>
+                <div class="theme-price"><span>★</span> 500</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 500</div>
+                    <button class="unlock-btn" onclick="unlockTheme('ember')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-theme="matrix">
+                <div class="theme-preview theme-preview-matrix"></div>
+                <h3>MATRIX</h3>
+                <p>Digital rain code</p>
+                <div class="theme-price"><span>★</span> 750</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 750</div>
+                    <button class="unlock-btn" onclick="unlockTheme('matrix')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-theme="synthwave">
+                <div class="theme-preview theme-preview-synthwave"></div>
+                <h3>SYNTHWAVE</h3>
+                <p>80s neon sunset</p>
+                <div class="theme-price"><span>★</span> 750</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 750</div>
+                    <button class="unlock-btn" onclick="unlockTheme('synthwave')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-theme="void">
+                <div class="theme-preview theme-preview-void"></div>
+                <h3>VOID</h3>
+                <p>Pure darkness</p>
+                <div class="theme-price"><span>★</span> 1000</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 1000</div>
+                    <button class="unlock-btn" onclick="unlockTheme('void')">UNLOCK</button>
+                </div>
+            </div>
+        </div>
+        <button class="back-btn" onclick="closeThemesModal()">← BACK</button>
+    </div>
+
+    <div id="shipsModal" class="themes-modal hidden">
+        <h2>SELECT SHIP</h2>
+        <div class="themes-grid" style="max-width: 800px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="theme-card" data-ship="arrow">
+                <div class="ship-preview">
+                    <canvas id="previewArrow" width="220" height="100"></canvas>
+                </div>
+                <h3>ARROW</h3>
+                <p>Classic triangle</p>
+                <div class="ship-stats">
+                    <div>Speed: 1.0x</div>
+                    <div>Handling: 1.0x</div>
+                </div>
+                <button class="equip-btn" onclick="equipShip('arrow')">EQUIP</button>
+            </div>
+            
+            <div class="theme-card locked" data-ship="nova">
+                <div class="ship-preview">
+                    <canvas id="previewNova" width="220" height="100"></canvas>
+                </div>
+                <h3>NOVA</h3>
+                <p>Golden rotating star</p>
+                <div class="ship-stats">
+                    <div>Speed: 1.2x</div>
+                    <div>Handling: 1.0x</div>
+                </div>
+                <div class="theme-price"><span>★</span> 500</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 500</div>
+                    <button class="unlock-btn" onclick="unlockShip('nova')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-ship="stardust">
+                <div class="ship-preview">
+                    <canvas id="previewStardust" width="220" height="100"></canvas>
+                </div>
+                <h3>STARDUST</h3>
+                <p>Pink glitter trail</p>
+                <div class="ship-stats">
+                    <div>Speed: 1.0x</div>
+                    <div>Handling: 1.1x</div>
+                </div>
+                <div class="theme-price"><span>★</span> 750</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 750</div>
+                    <button class="unlock-btn" onclick="unlockShip('stardust')">UNLOCK</button>
+                </div>
+            </div>
+            
+            <div class="theme-card locked" data-ship="prism">
+                <div class="ship-preview">
+                    <canvas id="previewPrism" width="220" height="100"></canvas>
+                </div>
+                <h3>PRISM</h3>
+                <p>Rainbow gradient star</p>
+                <div class="ship-stats">
+                    <div>Speed: 1.1x</div>
+                    <div>Handling: 1.1x</div>
+                </div>
+                <div class="theme-price"><span>★</span> 1000</div>
+                <div class="unlock-overlay">
+                    <div class="theme-price" style="font-size: 20px; margin-bottom: 10px;"><span>★</span> 1000</div>
+                    <button class="unlock-btn" onclick="unlockShip('prism')">UNLOCK</button>
+                </div>
+            </div>
+        </div>
+        <button class="back-btn" onclick="closeShipsModal()">← BACK</button>
+    </div>
+
+    <div id="dailyBonusPopup" class="screen hidden">
+        <h1 style="font-size: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">DAILY BONUS! 🎁</h1>
+        <p style="font-size: 24px; color: #fff;">Welcome back, pilot!</p>
+        <div style="font-size: 80px; margin: 20px 0;">★</div>
+        <p style="font-size: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #00d4ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin: 20px 0;">+100 STARS</p>
+        <button class="btn" onclick="claimDailyBonus()">CLAIM REWARD</button>
+    </div>
+
+    <div id="coinEarnedDisplay" class="coin-earned-display">
+        <div class="coin-icon-big"></div>
+        <div class="coin-counter-text" id="coinEarnedAmount">+0</div>
+    </div>
+
+    <div id="tutorialScreen" class="screen hidden">
+        <h1 style="font-size: 36px; margin-bottom: 20px; -webkit-text-fill-color: #00ffff; color: #00ffff;">NAVIGATION PROTOCOL</h1>
+        <p style="font-size: 20px; color: #fff; line-height: 1.8;">
+            <span style="color: #00ffff; font-weight: 700;">OBJECTIVE:</span> Navigate the unstable tunnel to achieve maximum distance.
+            <br>
+            <span style="color: #00ffff; font-weight: 700;">CONTROL:</span> Touch screen (or tilt device) to steer your ship.
+            <br>
+            <span style="color: #ff0055; font-weight: 700;">WARNING:</span> Collision with the outer ring will result in catastrophic failure.
+        </p>
+        <button class="btn" onclick="startGame()">COMMENCE</button>
+    </div>
+
+    <div id="gameOverScreen" class="screen hidden">
+        <h1 class="game-over-title" style="font-size: 48px; color: #ff0055; -webkit-text-fill-color: #ff0055;">CATASTROPHIC DENSITY</h1>
+        <p id="finalScore" style="margin-bottom: 20px;">You reached <span style="color:white; font-weight:bold;">0</span>m</p>
+        
+        <button class="btn" id="watchAdBtn" onclick="watchAdToContinue()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: #667eea; margin-top: 10px; padding: 20px 60px; font-size: 24px;">
+            📺 WATCH AD TO CONTINUE
+        </button>
+        
+        <button class="btn" id="gameOverRestartBtn" onclick="quitToMenu()" style="margin-top: 20px; padding: 20px 60px; font-size: 24px;">RESTART</button>
+    </div>
+
+    <div id="pauseScreen" class="screen hidden">
+        <h1 style="font-size: 48px;">PAUSED</h1>
+        <button class="btn" onclick="togglePause()">RESUME</button>
+        <button class="btn" onclick="quitToMenu()" style="margin-top: 20px;">QUIT</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('game-container');
+
+const SIDES = 6;
+const FOV = 800;
+const SEGMENT_DEPTH = 20;
+const WALL_THICKNESS = 0.8;
+const TUNNEL_RADIUS = 300;
+const MAX_PATH_DEVIATION = 150;
+const ANCHOR_SPACING = SEGMENT_DEPTH * 10;
+
+let WIDTH, HEIGHT;
+
+let gameState = 'START';
+let score = 0;
+let speed = 0;
+const BASE_SPEED = 5; 
+let hue = 0;
+let highScore = 0; 
+
+let playerX = 0;
+let playerY = 0;
+let targetX = 0;
+let targetY = 0;
+
+let cameraOffsetX = 0;
+let cameraOffsetY = 0;
+
+const SENSITIVITY_SCALE = 0.5;
+const SMOOTHING_FACTOR = 0.15;
+
+let isGyroActive = false;
+let gyroBaseX = 0;
+let gyroBaseY = 0;
+const GYRO_SENSITIVITY = 0.3;
+
+let canContinue = true;
+let savedGameState = null;
+
+let currentShip = 'arrow';
+let shipRotation = 0;
+let shipPulsePhase = 0;
+let shipTrail = [];
+let glitterParticles = [];
+
+const SHIPS = {
+    arrow: {
+        name: 'ARROW',
+        price: 0,
+        description: 'Classic triangle',
+        speed: 1.0,
+        handling: 1.0
+    },
+    nova: {
+        name: 'NOVA',
+        price: 500,
+        description: 'Golden rotating star',
+        speed: 1.2,
+        handling: 1.0
+    },
+    stardust: {
+        name: 'STARDUST',
+        price: 750,
+        description: 'Pink glitter trail',
+        speed: 1.0,
+        handling: 1.1
+    },
+    prism: {
+        name: 'PRISM',
+        price: 1000,
+        description: 'Rainbow gradient star',
+        speed: 1.1,
+        handling: 1.1
+    }
+};
+
+let currentTheme = 'neon';
+let coins = 0;
+let pendingCoins = 0;
+let lastLoginDate = null;
+let dailyBonusClaimed = false;
+
+// MISSION SYSTEM DATA
+let currentMission = {
+    target: 100,
+    reward: 20,
+    completed: false,
+    description: "Reach 100m"
+};
+
+const COLOR_THEMES = {
+    neon: [0, 30, 60, 120, 180, 210, 240, 270, 300, 330],
+    retro: [0, 45, 90, 135, 180, 225, 270, 315],
+    pastel: [15, 75, 135, 195, 255, 315],
+    midnight: [240, 260, 280, 200, 220, 240, 260, 280],
+    ember: [0, 15, 10, 25, 5, 20, 15, 30],
+    matrix: [120, 130, 125, 135, 120, 128, 132, 125],
+    synthwave: [300, 320, 280, 340, 310, 290, 330, 315],
+    void: [0, 0, 0, 0, 0, 0, 0, 0]
+};
+
+const THEME_STYLES = {
+    neon: { glow: 15, saturation: '100%', lightness: '70%', lineWidth: 1.0, alpha: 1.0 },
+    retro: { glow: 0, saturation: '80%', lightness: '60%', lineWidth: 0.5, alpha: 0.9 },
+    pastel: { glow: 5, saturation: '80%', lightness: '85%', lineWidth: 0.5, alpha: 0.9 },
+    midnight: { glow: 20, saturation: '90%', lightness: '40%', lineWidth: 1.5, alpha: 0.95 },
+    ember: { glow: 25, saturation: '100%', lightness: '50%', lineWidth: 1.2, alpha: 1.0 },
+    matrix: { glow: 18, saturation: '100%', lightness: '60%', lineWidth: 0.8, alpha: 0.85 },
+    synthwave: { glow: 22, saturation: '100%', lightness: '65%', lineWidth: 1.3, alpha: 0.95 },
+    void: { glow: 30, saturation: '0%', lightness: '80%', lineWidth: 1.0, alpha: 0.7 }
+};
+
+const THEME_PRICES = {
+    neon: 0,
+    retro: 0,
+    pastel: 0,
+    midnight: 500,
+    ember: 500,
+    matrix: 750,
+    synthwave: 750,
+    void: 1000
+};
+
+const THEME_DESCRIPTIONS = {
+    neon: 'Classic vibrant glow',
+    retro: 'Old school arcade',
+    pastel: 'Soft dreamy colors',
+    midnight: '🌙 Deep space blues - LOCKED',
+    ember: '🔥 Burning crimson fire - LOCKED',
+    matrix: '💚 Digital rain code - LOCKED',
+    synthwave: '🌆 80s neon sunset - LOCKED',
+    void: '⚫ Pure darkness - LOCKED'
+};
+
+let currentColorIndex = 0;
+
+let currentTunnelShape = 6;
+let nextShapeChange = 1000;
+
+let particles = [];
+const MAX_PARTICLES = 60;
+
+let path = [];
+let segmentColors = new Map();
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    const now = audioCtx.currentTime;
+
+    if (type === 'crash') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    } else if (type === 'coin') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+}
+
+function loadHighScore() {
+    const storedScore = localStorage.getItem('void_high_score');
+    highScore = storedScore ? parseInt(storedScore, 10) : 0;
+    
+    const storedCoins = localStorage.getItem('void_coins');
+    coins = storedCoins ? parseInt(storedCoins, 10) : 0;
+    
+    const storedShip = localStorage.getItem('void_current_ship');
+    currentShip = storedShip ? storedShip : 'arrow';
+    
+    const storedDate = localStorage.getItem('void_last_login');
+    lastLoginDate = storedDate ? storedDate : null;
+    
+    checkDailyBonus();
+    updateHighScoreDisplay();
+    updateCoinDisplay();
+    initMissions(); // Initialize missions when loading
+}
+
+// MISSION SYSTEM FUNCTIONS
+function initMissions() {
+    const saved = localStorage.getItem('void_mission');
+    if (saved) {
+        currentMission = JSON.parse(saved);
+        if (currentMission.completed) {
+            generateNewMission();
+        }
+    } else {
+        generateNewMission();
+    }
+    updateMissionDisplay();
+}
+
+function generateNewMission() {
+    const targets = [50, 100, 200, 300, 500];
+    const target = targets[Math.floor(Math.random() * targets.length)];
+    const reward = Math.floor(target / 5); // Example: 50m = 10 stars, 500m = 100 stars
+    
+    currentMission = {
+        target: target,
+        reward: reward,
+        completed: false,
+        description: `REACH ${target}m`
+    };
+    localStorage.setItem('void_mission', JSON.stringify(currentMission));
+    updateMissionDisplay();
+}
+
+function checkMission() {
+    if (!currentMission.completed && Math.floor(score / 100) >= currentMission.target) {
+        completeMission();
+    }
+}
+
+function completeMission() {
+    currentMission.completed = true;
+    coins += currentMission.reward;
+    saveCoins();
+    localStorage.setItem('void_mission', JSON.stringify(currentMission));
+    
+    showNotification(`MISSION COMPLETE! +${currentMission.reward} ★`);
+    playSound('coin');
+    
+    // Generate new mission for next run after a short delay
+    setTimeout(() => {
+        generateNewMission();
+    }, 2000);
+}
+
+function updateMissionDisplay() {
+    const el = document.getElementById('missionDisplay');
+    if (el) {
+        el.innerHTML = `
+            <span style="color:#aaa; font-size:14px; letter-spacing: 1px;">CURRENT MISSION</span><br>
+            <span style="color:#fff; font-size:24px; font-weight:bold;">${currentMission.description}</span><br>
+            <span style="color:#ffd700; font-size:16px;">REWARD: ${currentMission.reward} ★</span>
+        `;
+    }
+}
+
+function saveHighScore() {
+    localStorage.setItem('void_high_score', highScore);
+    updateHighScoreDisplay();
+}
+
+function saveCoins() {
+    localStorage.setItem('void_coins', coins);
+    updateCoinDisplay();
+}
+
+function checkDailyBonus() {
+    const today = new Date().toDateString();
+    if (lastLoginDate !== today) {
+        dailyBonusClaimed = false;
+        lastLoginDate = today;
+        localStorage.setItem('void_last_login', today);
+        showDailyBonusPopup();
+    }
+}
+
+function claimDailyBonus() {
+    if (!dailyBonusClaimed) {
+        coins += 100;
+        dailyBonusClaimed = true;
+        saveCoins();
+        document.getElementById('dailyBonusPopup').classList.add('hidden');
+        showNotification('+100 STARS! ⭐');
+    }
+}
+
+function showDailyBonusPopup() {
+    document.getElementById('dailyBonusPopup').classList.remove('hidden');
+}
+
+function updateCoinDisplay() {
+    const coinDisplays = document.querySelectorAll('.coin-display');
+    coinDisplays.forEach(display => {
+        display.innerText = coins;
+    });
+}
+
+function updateHighScoreDisplay() {
+    document.getElementById('highScoreDisplayStart').innerText = highScore;
+}
+
+function resize() {
+    WIDTH = canvas.parentElement.clientWidth;
+    HEIGHT = canvas.parentElement.clientHeight;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+}
+window.addEventListener('resize', resize);
+resize();
+
+function createParticle() {
+    return {
+        x: Math.random() * WIDTH,
+        y: Math.random() * HEIGHT,
+        z: Math.random() * 1000 + 500,
+        speed: Math.random() * 2 + 1,
+        size: Math.random() * 2 + 1,
+        brightness: Math.random() * 0.5 + 0.5
+    };
+}
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+        particles.push(createParticle());
+    }
+}
+
+function updateParticles(dt) {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.z -= speed * dt * 2;
+        
+        if (p.z < 1) {
+            particles[i] = createParticle();
+        }
+    }
+}
+
+function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const scale = FOV / p.z;
+        const x = (p.x - WIDTH / 2) * scale + WIDTH / 2;
+        const y = (p.y - HEIGHT / 2) * scale + HEIGHT / 2;
+        const size = p.size * scale;
+        
+        if (x > 0 && x < WIDTH && y > 0 && y < HEIGHT) {
+            const alpha = p.brightness * (1 - p.z / 1500);
+            ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+function generateNextPathPoint() {
+    const latestAnchor = path.filter(p => p.isAnchor).sort((a, b) => b.z - a.z)[0] || 
+                         { z: -ANCHOR_SPACING, centerX: 0, centerY: 0, rotation: 0, isAnchor: true };
+                         
+    const nextZ = latestAnchor.z + ANCHOR_SPACING;
+
+    const newX = latestAnchor.centerX + (Math.random() - 0.5) * 200;
+    const newY = latestAnchor.centerY + (Math.random() - 0.5) * 200;
+    
+    const clampedX = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newX));
+    const clampedY = Math.max(-MAX_PATH_DEVIATION, Math.min(MAX_PATH_DEVIATION, newY));
+
+    const newRotation = latestAnchor.rotation + (Math.random() - 0.5) * 0.5;
+
+    const palette = COLOR_THEMES[currentTheme];
+    const segmentColor = palette[currentColorIndex];
+    currentColorIndex = (currentColorIndex + 1) % palette.length;
+    
+    segmentColors.set(nextZ, segmentColor);
+
+    path.push({
+        z: nextZ,
+        centerX: clampedX,
+        centerY: clampedY,
+        rotation: newRotation,
+        isAnchor: true 
+    });
+
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initTunnel() {
+    path = [];
+    segmentColors.clear();
+    
+    path.push({ z: 0, centerX: 0, centerY: 0, rotation: 0, isAnchor: true });
+    segmentColors.set(0, hue);
+    
+    for(let i=0; i < 5; i++) {
+        generateNextPathPoint();
+    }
+
+    let currentZ = 0;
+    const maxZ = path[path.length - 1].z;
+    
+    while(currentZ < maxZ) {
+        currentZ += SEGMENT_DEPTH;
+
+        const p1 = path.filter(p => p.isAnchor && p.z <= currentZ)
+                       .sort((a, b) => b.z - a.z)[0]; 
+
+        const p2 = path.filter(p => p.isAnchor && p.z > currentZ)
+                     .sort((a, b) => a.z - b.z)[0]; 
+
+        if (p1 && p2 && currentZ < p2.z) {
+            const t = ((currentZ - p1.z) / (p2.z - p1.z)); 
+            
+            const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+            const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+            const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+            
+            path.push({
+                z: currentZ,
+                centerX: x,
+                centerY: y,
+                rotation: r,
+                isAnchor: false
+            });
+        }
+    }
+    path.sort((a, b) => a.z - b.z);
+}
+
+function initGame() {
+    loadHighScore(); 
+    initTunnel();
+    initParticles();
+    speed = BASE_SPEED;
+    score = 0;
+    playerX = 0;
+    playerY = 0;
+    targetX = 0;
+    targetY = 0;
+    canContinue = true;
+    savedGameState = null;
+    shipRotation = 0;
+    shipPulsePhase = 0;
+    shipTrail = [];
+    glitterParticles = [];
+    
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0]; 
+    currentColorIndex = 0;
+    currentTunnelShape = 6;
+    nextShapeChange = 1000;
+    
+    // Always start at the START screen now
+    gameState = 'START';
+    document.getElementById('startScreen').classList.remove('hidden');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+}
+
+function updateThemeButtons() {
+    updateThemeCards();
+    updateShipCards();
+}
+
+function equipTheme(theme) {
+    currentTheme = theme;
+    currentColorIndex = 0;
+    const palette = COLOR_THEMES[currentTheme];
+    hue = palette[0];
+    updateThemeCards();
+    showNotification(`✨ ${theme.toUpperCase()} theme selected!`);
+}
+
+function showTutorial() {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('tutorialScreen').classList.remove('hidden');
+    gameState = 'TUTORIAL';
+}
+
+function unlockTheme(theme) {
+    const price = THEME_PRICES[theme];
+    const unlockedThemes = JSON.parse(localStorage.getItem('void_unlocked_themes') || '["neon","retro","pastel"]');
+
+    if (unlockedThemes.includes(theme)) {
+        equipTheme(theme);
+        return;
+    }
+
+    if (coins >= price) {
+        if (confirm(`🚀 Unlock ${theme.toUpperCase()} for ${price} stars?\n\nYou have ${coins} stars.`)) {
+            coins -= price;
+            saveCoins();
+            unlockedThemes.push(theme);
+            localStorage.setItem('void_unlocked_themes', JSON.stringify(unlockedThemes));
+            equipTheme(theme); 
+            showNotification(`✨ ${theme.toUpperCase()} theme unlocked and selected!`);
+        }
+    } else {
+        const needed = price - coins;
+        showNotification(`❌ Need ${needed} more stars! (You have ${coins})`);
+    }
+}
+
+function updateThemeCards() {
+    const unlockedThemes = JSON.parse(localStorage.getItem('void_unlocked_themes') || '["neon","retro","pastel"]');
+    
+    document.querySelectorAll('.theme-card').forEach(card => {
+        const themeName = card.getAttribute('data-theme');
+        
+        if (!unlockedThemes.includes(themeName)) {
+            card.classList.add('locked');
+        } else {
+            card.classList.remove('locked');
+            const priceDiv = card.querySelector('.theme-price');
+            if (priceDiv) priceDiv.style.display = 'none';
+        }
+        
+        if (themeName === currentTheme) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+}
+
+function openThemesModal() {
+    document.getElementById('themesModal').classList.remove('hidden');
+    updateThemeCards();
+}
+
+function closeThemesModal() {
+    document.getElementById('themesModal').classList.add('hidden');
+}
+
+function selectThemeFromModal(theme) {
+    const price = THEME_PRICES[theme];
+    const unlockedThemes = JSON.parse(localStorage.getItem('void_unlocked_themes') || '["neon","retro","pastel"]');
+    
+    if (unlockedThemes.includes(theme)) {
+        currentTheme = theme;
+        currentColorIndex = 0;
+        const palette = COLOR_THEMES[currentTheme];
+        hue = palette[0];
+        updateThemeCards();
+        showNotification(`${theme.toUpperCase()} theme selected! 🎨`);
+        return;
+    }
+    
+    if (coins >= price) {
+        if (confirm(`🌟 Unlock ${theme.toUpperCase()} theme for ${price} stars?\n\nYou have ${coins} stars.`)) {
+            coins -= price;
+            saveCoins();
+            unlockedThemes.push(theme);
+            localStorage.setItem('void_unlocked_themes', JSON.stringify(unlockedThemes));
+            
+            currentTheme = theme;
+            currentColorIndex = 0;
+            const palette = COLOR_THEMES[currentTheme];
+            hue = palette[0];
+            
+            updateThemeCards();
+            showNotification(`✨ ${theme.toUpperCase()} theme unlocked and selected!`);
+        }
+    } else {
+        const needed = price - coins;
+        showNotification(`❌ Need ${needed} more stars! (You have ${coins})`);
+    }
+}
+
+function openShipsModal() {
+    document.getElementById('shipsModal').classList.remove('hidden');
+    updateShipCards();
+    renderShipPreviews();
+}
+
+function closeShipsModal() {
+    document.getElementById('shipsModal').classList.add('hidden');
+}
+
+function equipShip(ship) {
+    currentShip = ship;
+    localStorage.setItem('void_current_ship', ship);
+    shipTrail = []; 
+    updateShipCards();
+    showNotification(`${SHIPS[ship].name} equipped! 🚀`);
+}
+
+function unlockShip(ship) {
+    const price = SHIPS[ship].price;
+    const unlockedShips = JSON.parse(localStorage.getItem('void_unlocked_ships') || '["arrow"]');
+    
+    if (unlockedShips.includes(ship)) {
+        equipShip(ship);
+        return;
+    }
+
+    if (coins >= price) {
+        if (confirm(`🚀 Unlock ${SHIPS[ship].name} for ${price} stars?\n\nYou have ${coins} stars.`)) {
+            coins -= price;
+            saveCoins();
+            unlockedShips.push(ship);
+            localStorage.setItem('void_unlocked_ships', JSON.stringify(unlockedShips));
+            equipShip(ship); 
+            showNotification(`✨ ${SHIPS[ship].name} unlocked and equipped!`);
+        }
+    } else {
+        const needed = price - coins;
+        showNotification(`❌ Need ${needed} more stars! (You have ${coins})`);
+    }
+}
+
+function updateShipCards() {
+    const unlockedShips = JSON.parse(localStorage.getItem('void_unlocked_ships') || '["arrow"]');
+    
+    document.querySelectorAll('[data-ship]').forEach(card => {
+        const shipName = card.getAttribute('data-ship');
+        
+        if (!unlockedShips.includes(shipName)) {
+            card.classList.add('locked');
+        } else {
+            card.classList.remove('locked');
+            const priceDiv = card.querySelector('.theme-price');
+            if (priceDiv) priceDiv.style.display = 'none';
+        }
+        
+        if (shipName === currentShip) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+}
+
+function renderShipPreviews() {
+    let rotation = 0;
+    let pulse = 0;
+    let glitter = [];
+    
+    function animate() {
+        rotation += 0.05;
+        pulse += 0.05;
+        
+        // Arrow
+        const arrowCanvas = document.getElementById('previewArrow');
+        if (arrowCanvas) {
+            const ctx = arrowCanvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 220, 100);
+            ctx.fillStyle = '#fff';
+            ctx.save();
+            ctx.translate(110, 50);
+            ctx.beginPath();
+            ctx.moveTo(0, -10);
+            ctx.lineTo(10, 10);
+            ctx.lineTo(-10, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Nova - Golden
+        const novaCanvas = document.getElementById('previewNova');
+        if (novaCanvas) {
+            const ctx = novaCanvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 220, 100);
+            ctx.fillStyle = '#ffd700';
+            ctx.save();
+            ctx.translate(110, 50);
+            ctx.rotate(rotation * 0.5);
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const radius = i % 2 === 0 ? 12 : 5;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Stardust - Pink with glitter
+        const stardustCanvas = document.getElementById('previewStardust');
+        if (stardustCanvas) {
+            const ctx = stardustCanvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 220, 100);
+            
+            // Add glitter
+            if (Math.random() < 0.2) {
+                glitter.push({
+                    x: 110 + (Math.random() - 0.5) * 20,
+                    y: 50 + (Math.random() - 0.5) * 20,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    life: 1.0,
+                    size: Math.random() * 2 + 1
+                });
+            }
+            
+            // Draw glitter
+            for (let i = glitter.length - 1; i >= 0; i--) {
+                const p = glitter[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if (p.life <= 0) {
+                    glitter.splice(i, 1);
+                } else {
+                    ctx.fillStyle = `rgba(255, 105, 180, ${p.life})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.fillStyle = '#ff69b4';
+            ctx.save();
+            ctx.translate(110, 50);
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const radius = i % 2 === 0 ? 12 : 5;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // Prism - Rainbow gradient
+        const prismCanvas = document.getElementById('previewPrism');
+        if (prismCanvas) {
+            const ctx = prismCanvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 220, 100);
+            
+            const gradientHue = (pulse * 100) % 360;
+            const gradient = ctx.createLinearGradient(98, 38, 122, 62);
+            gradient.addColorStop(0, `hsl(${gradientHue}, 100%, 60%)`);
+            gradient.addColorStop(0.5, `hsl(${(gradientHue + 120) % 360}, 100%, 60%)`);
+            gradient.addColorStop(1, `hsl(${(gradientHue + 240) % 360}, 100%, 60%)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.save();
+            ctx.translate(110, 50);
+            ctx.rotate(rotation * 0.5);
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const radius = i % 2 === 0 ? 12 : 5;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerText = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 2500);
+}
+
+function togglePause() {
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseIcon = document.getElementById('pauseIcon');
+    
+    if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        document.getElementById('pauseScreen').classList.remove('hidden');
+        pauseIcon.innerHTML = '<div class="play-icon"></div>';
+    } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        document.getElementById('pauseScreen').classList.add('hidden');
+        pauseIcon.innerHTML = '<span></span><span></span>';
+        lastTime = performance.now();
+    }
+}
+
+function quitToMenu() {
+    // Return to START screen and regenerate mission maybe?
+    initGame(); 
+    
+    if (pendingCoins > 0) {
+        setTimeout(() => {
+            showCoinEarnedAnimation(pendingCoins);
+            
+            setTimeout(() => {
+                const startCoins = coins;
+                const endCoins = coins + pendingCoins;
+                
+                animateNumberCount(startCoins, endCoins, 1500);
+                
+                flyCoinsToCounter(pendingCoins);
+                
+                coins = endCoins;
+                saveCoins();
+                
+                pendingCoins = 0;
+            }, 2000);
+        }, 300);
+    }
+}
+
+function animateNumberCount(start, end, duration) {
+    const coinDisplays = document.querySelectorAll('.coin-display');
+    const startTime = performance.now();
+    const difference = end - start;
+    
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.floor(start + difference * easeProgress);
+        
+        coinDisplays.forEach(display => {
+            display.innerText = currentValue;
+        });
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            coinDisplays.forEach(display => {
+                display.innerText = end;
+            });
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+function watchAdToContinue() {
+    if (!canContinue || !savedGameState) {
+        return;
+    }
+    
+    const watchAdBtn = document.getElementById('watchAdBtn');
+    watchAdBtn.disabled = true;
+    watchAdBtn.innerText = '⏳ LOADING AD...';
+    
+    if (window.AndroidAdMob && typeof window.AndroidAdMob.showRewardedAd === 'function') {
+        try {
+            window.AndroidAdMob.showRewardedAd();
+        } catch (error) {
+            console.error('AdMob error:', error);
+            setTimeout(() => continueGame(), 1000);
+        }
+    } else {
+        console.log('Running in browser - simulating ad');
+        setTimeout(() => {
+            alert('Ad would play here in the Android app.\n\nFor testing: Ad completed!');
+            continueGame();
+        }, 1500);
+    }
+}
+
+window.onAdRewarded = function() {
+    console.log('Ad reward received!');
+    continueGame();
+};
+
+window.onAdFailed = function() {
+    console.log('Ad failed or closed');
+    const watchAdBtn = document.getElementById('watchAdBtn');
+    watchAdBtn.disabled = false;
+    watchAdBtn.innerText = '📺 WATCH AD TO CONTINUE';
+    alert('Unable to load ad. Please try again.');
+};
+
+function continueGame() {
+    if (!savedGameState) return;
+    
+    score = savedGameState.score;
+    speed = savedGameState.speed * 0.7;
+    playerX = savedGameState.playerX;
+    playerY = savedGameState.playerY;
+    path = savedGameState.path;
+    segmentColors = savedGameState.segmentColors;
+    
+    for (let i = 0; i < path.length; i++) {
+        path[i].z += 200;
+    }
+    
+    canContinue = false;
+    savedGameState = null;
+    pendingCoins = 0; 
+    
+    gameState = 'PLAYING';
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.remove('hidden');
+    gameContainer.style.cursor = 'none';
+    lastTime = performance.now();
+}
+
+async function requestGyroPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === 'granted') {
+                enableGyroscope();
+            }
+        } catch (error) {
+            console.log('Gyroscope permission denied');
+        }
+    } else {
+        enableGyroscope();
+    }
+}
+
+function enableGyroscope() {
+    window.addEventListener('deviceorientation', handleGyroscope);
+    isGyroActive = true;
+}
+
+function handleGyroscope(e) {
+    if (gameState !== 'PLAYING' || !isGyroActive) return;
+    
+    const beta = e.beta || 0;
+    const gamma = e.gamma || 0;
+
+    if (gyroBaseX === 0 && gyroBaseY === 0) {
+        gyroBaseX = gamma;
+        gyroBaseY = beta;
+    }
+
+    const deltaX = (gamma - gyroBaseX) * GYRO_SENSITIVITY;
+    const deltaY = (beta - gyroBaseY) * GYRO_SENSITIVITY;
+
+    const maxTarget = TUNNEL_RADIUS;
+
+    targetX = Math.max(-maxTarget, Math.min(maxTarget, deltaX * 8));
+    targetY = Math.max(-maxTarget, Math.min(maxTarget, deltaY * 8));
+}
+
+// New unified touch handler replacing the joystick
+function handleTouch(e) {
+    if (gameState !== 'PLAYING') return;
+    e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    const screenCenterOffsetX = touch.clientX - WIDTH / 2;
+    const screenCenterOffsetY = touch.clientY - HEIGHT / 2;
+
+    // Increased sensitivity for touch to ensure full reach on narrow mobile screens
+    // 1.5 multiplier allows the user to reach the edges easily
+    const touchSensitivity = 1.5;
+
+    targetX = screenCenterOffsetX * touchSensitivity;
+    targetY = screenCenterOffsetY * touchSensitivity;
+}
+
+// Set up touch listeners directly on the game container
+gameContainer.addEventListener('touchstart', handleTouch, { passive: false });
+gameContainer.addEventListener('touchmove', handleTouch, { passive: false });
+
+
+gameContainer.addEventListener('mousemove', handleCursorMove);
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'p' || e.key === 'P') {
+        if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+            togglePause();
+        }
+    }
+});
+
+function handleCursorMove(e) {
+    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
+    
+    if (e.touches) return; 
+
+    if (isGyroActive && gyroBaseX !== 0) return;
+    
+    if (e.cancelable) e.preventDefault();
+    
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    const screenCenterOffsetX = clientX - WIDTH / 2;
+    const screenCenterOffsetY = clientY - HEIGHT / 2;
+
+    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
+    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
+}
+
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (gameState === 'START' || gameState === 'PAUSED' || gameState === 'TUTORIAL') {
+        render();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    const dt = (timestamp - lastTime) / 16.66;
+    lastTime = timestamp;
+
+    if (gameState === 'PLAYING') {
+        update(dt);
+    }
+    render();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+    playerX += (targetX - playerX) * SMOOTHING_FACTOR * dt;
+    playerY += (targetY - playerY) * SMOOTHING_FACTOR * dt;
+
+    playerX = Math.max(-WIDTH/2, Math.min(WIDTH/2, playerX));
+    playerY = Math.max(-HEIGHT/2, Math.min(HEIGHT/2, playerY));
+
+    const cameraMultiplier = isGyroActive ? -0.5 : -0.25;
+    const targetCameraX = playerX * cameraMultiplier;
+    const targetCameraY = playerY * cameraMultiplier;
+    cameraOffsetX += (targetCameraX - cameraOffsetX) * 0.08 * dt;
+    cameraOffsetY += (targetCameraY - cameraOffsetY) * 0.08 * dt;
+
+    speed += 0.0015 * dt;
+    score += Math.floor(speed * dt);
+    
+    if (currentShip === 'nova' || currentShip === 'prism') {
+        shipRotation += 0.1 * dt;
+    }
+    if (currentShip === 'stardust') {
+        if (Math.random() < 0.3) {
+            glitterParticles.push({
+                x: playerX,
+                y: playerY,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                life: 1.0,
+                size: Math.random() * 3 + 1
+            });
+        }
+        for (let i = glitterParticles.length - 1; i >= 0; i--) {
+            const p = glitterParticles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02 * dt;
+            if (p.life <= 0) {
+                glitterParticles.splice(i, 1);
+            }
+        }
+    }
+    if (currentShip === 'prism') {
+        shipPulsePhase += 0.05 * dt;
+    }
+
+    updateParticles(dt);
+    checkMission(); // CHECK MISSIONS
+
+    const moveZ = speed * dt;
+    
+    for (let i = 0; i < path.length; i++) {
+        path[i].z -= moveZ;
+    }
+
+    if (score / 100 > nextShapeChange) {
+        const shapes = [4, 6, 8];
+        currentTunnelShape = shapes[Math.floor(Math.random() * shapes.length)];
+        nextShapeChange += 500;
+    }
+
+    while (path.length > 0 && path[0].z < -ANCHOR_SPACING) {
+        const removedZ = path[0].z;
+        path.shift();
+        segmentColors.delete(removedZ);
+    }
+    
+    if (path.length > 0) {
+        let closestSegment = null;
+        for (const segment of path) {
+            if (!segment.isAnchor && segment.z > 0) {
+                closestSegment = segment;
+                break;
+            }
+        }
+        
+        if (closestSegment) {
+            checkCollision(closestSegment);
+        }
+    }
+
+    const maxZNeeded = 5 * ANCHOR_SPACING;
+    const farthestZ = path.length > 0 ? path[path.length - 1].z : 0;
+    
+    if (farthestZ < maxZNeeded) {
+        generateNextPathPoint();
+        
+        const anchors = path.filter(p => p.isAnchor).sort((a, b) => a.z - b.z);
+        const p1 = anchors[anchors.length - 2];
+        const p2 = anchors[anchors.length - 1];
+        
+        if (p1 && p2) {
+            let currentInterpolationZ = p1.z;
+            while (currentInterpolationZ < p2.z - SEGMENT_DEPTH) {
+                currentInterpolationZ += SEGMENT_DEPTH;
+
+                const t = ((currentInterpolationZ - p1.z) / (p2.z - p1.z)); 
+                
+                const x = p1.centerX + (p2.centerX - p1.centerX) * t;
+                const y = p1.centerY + (p2.centerY - p1.centerY) * t;
+                const r = p1.rotation + (p2.rotation - p1.rotation) * t;
+                
+                path.push({
+                    z: currentInterpolationZ,
+                    centerX: x,
+                    centerY: y,
+                    rotation: r,
+                    isAnchor: false
+                });
+            }
+            path.sort((a, b) => a.z - b.z);
+        }
+    }
+
+    document.getElementById('scoreDisplay').innerText = Math.floor(score / 100);
+    let mach = (speed / BASE_SPEED).toFixed(1);
+    document.getElementById('speedDisplay').innerText = `MACH ${mach}`;
+}
+
+function checkCollision(segment) {
+    const dx = playerX - segment.centerX;
+    const dy = playerY - segment.centerY;
+
+    const distanceToCenter = Math.sqrt(dx * dx + dy * dy);
+
+    const innerRadius = TUNNEL_RADIUS * WALL_THICKNESS;
+
+    if (distanceToCenter > innerRadius + 10) {
+        crash();
+    }
+}
+
+function crash() {
+    gameState = 'GAMEOVER';
+    
+    if (canContinue) {
+        savedGameState = {
+            score: score,
+            speed: speed,
+            playerX: playerX,
+            playerY: playerY,
+            path: JSON.parse(JSON.stringify(path)),
+            segmentColors: new Map(segmentColors)
+        };
+    }
+    
+    speed = 0;
+    playSound('crash');
+    
+    if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+    }
+    
+    canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+    setTimeout(() => canvas.style.transform = 'none', 50);
+    
+    const finalScoreValue = Math.floor(score / 100);
+    const earnedCoins = Math.floor(finalScoreValue / 10);
+    
+    pendingCoins = earnedCoins;
+
+    if (finalScoreValue > highScore) {
+        highScore = finalScoreValue;
+        saveHighScore();
+        document.getElementById('finalScore').innerHTML = `NEW RECORD: <span style="color: #00ffff; font-weight:bold;">${finalScoreValue}</span>m`;
+    } else {
+        document.getElementById('finalScore').innerHTML = `You reached <span style="color:white; font-weight:bold;">${finalScoreValue}</span>m`;
+    }
+
+    const watchAdBtn = document.getElementById('watchAdBtn');
+    if (canContinue) {
+        watchAdBtn.style.display = 'inline-block';
+    } else {
+        watchAdBtn.style.display = 'none';
+    }
+
+    document.getElementById('ui-layer').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    gameContainer.style.cursor = 'auto';
+}
+
+function showCoinEarnedAnimation(amount) {
+    const display = document.getElementById('coinEarnedDisplay');
+    const amountText = document.getElementById('coinEarnedAmount');
+    
+    display.classList.remove('show');
+    void display.offsetWidth;
+    
+    let currentCount = 0;
+    const increment = Math.ceil(amount / 20);
+    const countInterval = setInterval(() => {
+        currentCount += increment;
+        if (currentCount >= amount) {
+            currentCount = amount;
+            clearInterval(countInterval);
+        }
+        amountText.innerText = `+${currentCount}`;
+    }, 50);
+    
+    display.classList.add('show');
+    
+    setTimeout(() => {
+        display.classList.remove('show');
+    }, 2000);
+}
+
+function flyCoinsToCounter(amount) {
+    const coinCounter = document.querySelector('.coin-counter');
+    if (!coinCounter) return;
+    
+    const targetRect = coinCounter.getBoundingClientRect();
+    const targetX = targetRect.left + targetRect.width / 2;
+    const targetY = targetRect.top + targetRect.height / 2;
+    
+    const numCoins = Math.min(amount, 15);
+    
+    for (let i = 0; i < numCoins; i++) {
+        setTimeout(() => {
+            createFlyingCoin(targetX, targetY);
+        }, i * 100);
+    }
+}
+
+function createFlyingCoin(targetX, targetY) {
+    const coin = document.createElement('div');
+    coin.className = 'flying-coin';
+    
+    const startX = window.innerWidth / 2;
+    const startY = window.innerHeight / 2;
+    
+    coin.style.left = startX + 'px';
+    coin.style.top = startY + 'px';
+    
+    document.body.appendChild(coin);
+    
+    const deltaX = targetX - startX;
+    const deltaY = targetY - startY;
+    
+    let progress = 0;
+    const duration = 800;
+    const startTime = performance.now();
+    
+    function animate(currentTime) {
+        progress = (currentTime - startTime) / duration;
+        
+        if (progress < 1) {
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            const currentX = startX + deltaX * easeProgress;
+            const currentY = startY + deltaY * easeProgress - Math.sin(progress * Math.PI) * 100;
+            
+            coin.style.left = currentX + 'px';
+            coin.style.top = currentY + 'px';
+            coin.style.transform = `rotate(${progress * 720}deg) scale(${1 - progress * 0.3})`;
+            
+            requestAnimationFrame(animate);
+        } else {
+            coin.remove();
+            const counter = document.querySelector('.coin-counter');
+            if (counter) {
+                counter.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    counter.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+function render() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.save();
+    ctx.translate(cameraOffsetX, cameraOffsetY);
+
+    drawParticles();
+
+    const cx = WIDTH / 2;
+    const cy = HEIGHT / 2;
+    
+    const pathLen = path.length;
+    
+    for (let i = pathLen - 2; i >= 0; i--) {
+        const seg1 = path[i];
+        const seg2 = path[i + 1];
+        
+        if (seg1.z < 1 || seg2.z < 1) continue; 
+
+        drawTunnelSegment(cx, cy, seg1, seg2);
+    }
+    
+    ctx.save();
+    ctx.translate(cx + playerX, cy + playerY);
+    
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
+    ctx.fillStyle = '#fff';
+    
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(10, 10);
+    ctx.lineTo(-10, 10);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = `hsla(${hue + 180}, 100%, 60%, 0.5)`;
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    
+    ctx.restore();
+}
+
+function drawTunnelSegment(cx, cy, seg1, seg2) {
+    const scale1 = FOV / seg1.z;
+    const scale2 = FOV / seg2.z;
+
+    const outerRadius1 = TUNNEL_RADIUS * scale1;
+    const innerRadius1 = outerRadius1 * WALL_THICKNESS;
+    
+    const outerRadius2 = TUNNEL_RADIUS * scale2;
+    const innerRadius2 = outerRadius2 * WALL_THICKNESS;
+
+    let segmentHue = hue;
+    const anchors = Array.from(segmentColors.keys()).sort((a, b) => a - b);
+    
+    for (let i = anchors.length - 1; i >= 0; i--) {
+        if (seg2.z >= anchors[i]) {
+            segmentHue = segmentColors.get(anchors[i]);
+            break;
+        }
+    }
+    
+    const style = THEME_STYLES[currentTheme];
+    const lineWidth = 2 + scale2 * style.lineWidth;
+    const blurAmount = Math.max(0, style.glow * scale2);
+    
+    ctx.strokeStyle = `hsl(${segmentHue}, ${style.saturation}, ${style.lightness})`;
+    ctx.shadowBlur = blurAmount;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.globalAlpha = style.alpha;
+
+    const sides = currentTunnelShape;
+    const angleStep = (Math.PI * 2) / sides;
+    
+    for (let j = 0; j < sides; j++) {
+        const angle1_a = j * angleStep + seg1.rotation;
+        const angle1_b = (j + 1) * angleStep + seg1.rotation;
+        const angle2_a = j * angleStep + seg2.rotation;
+
+        const cos2a = Math.cos(angle2_a);
+        const sin2a = Math.sin(angle2_a);
+        const cos1a = Math.cos(angle1_a);
+        const sin1a = Math.sin(angle1_a);
+        const cos1b = Math.cos(angle1_b);
+        const sin1b = Math.sin(angle1_b);
+
+        const centerX2Scaled = seg2.centerX * scale2;
+        const centerY2Scaled = seg2.centerY * scale2;
+        const centerX1Scaled = seg1.centerX * scale1;
+        const centerY1Scaled = seg1.centerY * scale1;
+
+        const P3_I = { 
+            x: cx + centerX2Scaled + cos2a * innerRadius2, 
+            y: cy + centerY2Scaled + sin2a * innerRadius2 
+        };
+        
+        const P1_I = { 
+            x: cx + centerX1Scaled + cos1a * innerRadius1, 
+            y: cy + centerY1Scaled + sin1a * innerRadius1 
+        };
+        
+        const P2_I = { 
+            x: cx + centerX1Scaled + cos1b * innerRadius1, 
+            y: cy + centerY1Scaled + sin1b * innerRadius1 
+        };
+
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P2_I.x, P2_I.y);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(P3_I.x, P3_I.y);
+        ctx.lineTo(P1_I.x, P1_I.y);
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0;
+}
+
+// GAME STARTER: COMMENCE button
+function startGame() {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('tutorialScreen').classList.add('hidden');
+    document.getElementById('ui-layer').classList.remove('hidden');
+    gameContainer.style.cursor = 'none';
+
+    // Reset some game logic
+    score = 0;
+    speed = BASE_SPEED;
+    playerX = 0;
+    playerY = 0;
+    targetX = 0;
+    targetY = 0;
+
+    gameState = 'PLAYING';
+    
+    requestGyroPermission();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    lastTime = performance.now();
+}
+
+window.onload = function () {
+    initGame();
+    resize();
+    loadHighScore();
+    updateThemeButtons();
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,WIDTH, HEIGHT);
+    requestAnimationFrame(gameLoop); 
+}
+</script>
+</body>
+</html>
