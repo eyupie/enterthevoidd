@@ -1198,7 +1198,7 @@ let speed = 0;
 const BASE_SPEED = 5; 
 let hue = 0;
 let highScore = 0; 
-
+let touchActive = false;
 let playerX = 0;
 let playerY = 0;
 let targetX = 0;
@@ -2149,6 +2149,7 @@ function handleGyroscope(e) {
 function handleTouch(e) {
     if (gameState !== 'PLAYING') return;
     e.preventDefault(); 
+    touchActive = true;
     
     const touch = e.touches[0];
     const screenCenterOffsetX = touch.clientX - WIDTH / 2;
@@ -2161,6 +2162,13 @@ function handleTouch(e) {
     targetX = screenCenterOffsetX * touchSensitivity;
     targetY = screenCenterOffsetY * touchSensitivity;
 }
+window.addEventListener('touchend', () => {
+    touchActive = false;
+
+    // Stop returning to center
+    targetX = playerX;
+    targetY = playerY;
+});
 
 // Set up touch listeners directly on the game container
 gameContainer.addEventListener('touchstart', handleTouch, { passive: false });
