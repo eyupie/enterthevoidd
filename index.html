@@ -2186,23 +2186,17 @@ window.addEventListener('keydown', (e) => {
 });
 
 function handleCursorMove(e) {
-    if (gameState !== 'PLAYING' && gameState !== 'TUTORIAL') return;
-    
-    if (e.touches) return; 
+    // PREVENT MOUSE FROM OVERRIDING TOUCH
+    if (touchActive) return;
 
-    if (isGyroActive && gyroBaseX !== 0) return;
-    
-    if (e.cancelable) e.preventDefault();
-    
-    const clientX = e.clientX;
-    const clientY = e.clientY;
+    const rect = gameContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left - WIDTH / 2;
+    const y = e.clientY - rect.top - HEIGHT / 2;
 
-    const screenCenterOffsetX = clientX - WIDTH / 2;
-    const screenCenterOffsetY = clientY - HEIGHT / 2;
-
-    targetX = screenCenterOffsetX * SENSITIVITY_SCALE;
-    targetY = screenCenterOffsetY * SENSITIVITY_SCALE;
+    targetX = x;
+    targetY = y;
 }
+
 
 let lastTime = 0;
 
